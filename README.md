@@ -21,6 +21,15 @@ For non-interactive setup, such as CI:
 ./setup.py --no-shell
 ```
 
+Set up a specific development workstream without installing unrelated toolchains:
+
+```bash
+./setup.py --workstream docs --no-shell
+./setup.py --workstream python --no-shell
+```
+
+Available workstreams are `docs`, `python`, `rust`, `ros`, and `jetson`. Workstreams that need a future Rust, ROS 2, or Jetson installer fail clearly until the repository contains those packages.
+
 Serve the documentation site:
 
 ```bash
@@ -40,6 +49,24 @@ Install the Git hooks locally:
 ```bash
 uv run --group dev prek install
 ```
+
+## Development stack
+
+The project should stay in a **polyglot monorepo** for now. Documentation, ArduPilot configuration, Python tools, Rust services, ROS packages, deployment manifests, model manifests, and replay tests belong together because they describe one aircraft system and share interface contracts. Keep large raw datasets, videos, and model weights out of normal Git history.
+
+Use a slim environment per workstream:
+
+| Workstream | Default tools | Use it for | Why |
+|---|---|---|---|
+| Documentation and project tooling | Markdown, MkDocs Material, `uv`, `prek`, Ruff, ty | This guide, checks, small repo automation | Fast local setup and reproducible Python tooling |
+| Python tools | Python, `uv`, MAVSDK-Python, OpenCV, ONNX Runtime | Ground-side inference, replay, evaluation, logs, CLIs | Fast iteration and the strongest robotics/ML scripting ecosystem |
+| Rust services | Rust, Cargo | Standalone telemetry, logging, policy, or stream-supervision daemons | Memory safety and robust long-running services without forcing C++ everywhere |
+| ROS 2 integration | Ubuntu 24.04, ROS 2 Jazzy, `colcon`, CMake, `rclcpp` | Multi-process robotics integration, simulation, ROS-native nodes | Best-supported ROS 2 path on the same Ubuntu generation as JetPack 7 |
+| Jetson deployment | JetPack 7, TensorRT, GStreamer, Isaac ROS/DeepStream only when needed | Onboard accelerated perception and production deployment | Uses NVIDIA-supported acceleration and deployment paths |
+
+`uv` manages Python environments and Python dependency groups. It does **not** manage C++, Rust, ROS, CUDA, TensorRT, or system packages. Use Cargo for Rust packages and `colcon`/CMake for ROS 2 or C++ packages.
+
+Rust is preferred over new C++ where it can remain a standalone service with clean message/file/socket boundaries. C++ remains the fallback for first-class ROS 2 and NVIDIA/vendor integration, where upstream support, examples, and debugging tools still assume C++.
 
 ## Publish with GitHub Pages
 

@@ -47,6 +47,7 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "setup.py" = [
+    "B008",   # Typer option declarations are intentionally created in parameter defaults.
     "FBT001", # Typer boolean flags are declared as bool parameters by design.
     "FBT002", # Typer's working default-value API requires bool defaults in the signature.
     "FBT003", # Typer option declarations pass bool defaults positionally.

@@ -4,9 +4,20 @@ Primary sources are preferred. Verify current board revisions, software releases
 
 ## Documentation-site stack
 
+- [uv documentation](https://docs.astral.sh/uv/)
 - [MkDocs documentation](https://www.mkdocs.org/)
 - [Material for MkDocs — publishing](https://squidfunk.github.io/mkdocs-material/publishing-your-site/)
 - [Material for MkDocs — versioning](https://squidfunk.github.io/mkdocs-material/setup/setting-up-versioning/)
+
+## Development stack
+
+- [ROS 2 release policy / REP 2000](https://raw.githubusercontent.com/ros-infrastructure/rep/master/rep-2000.rst)
+- [ROS distribution index](https://raw.githubusercontent.com/ros/rosdistro/master/index-v4.yaml)
+- [colcon documentation](https://colcon.readthedocs.io/en/released/)
+- [NVIDIA JetPack documentation](https://developer.nvidia.com/embedded/jetpack)
+- [ros2_rust / rclrs](https://github.com/ros2-rust/ros2_rust)
+- [GStreamer Rust bindings](https://gitlab.freedesktop.org/gstreamer/gstreamer-rs)
+- [Rust MAVLink implementation](https://github.com/mavlink/rust-mavlink)
 
 ## Flight systems
 
