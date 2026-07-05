@@ -38,3 +38,23 @@ These are **architectures**, not all-in-one kits. They keep the project modular 
 
 !!! note "Use representative families, not blind substitutions"
     Check the current ArduPilot target, connector pinout, firmware support and voltage domains before purchasing any exact board revision. Interface changes between revisions can be material.
+
+## Buying advice for Germany
+
+These are the parts that are worth buying first if you are shopping in Germany right now. For fast-moving parts, the link goes to a live German price search instead of a fixed retailer.
+
+| Part | Buy this when | Cheapest current Germany link | Advice |
+|---|---|---|---|
+| Jetson Orin Nano Super Developer Kit | You want the quickest JetPack/TensorRT bench setup and accept that the kit is for development, not the final airframe | [Geizhals search](https://www.geizhals.de/?fs=Jetson+Orin+Nano+Super+Developer+Kit) | Buy the dev kit only for bring-up and software work. For the aircraft, plan on a module plus a compact carrier. |
+| Raspberry Pi 5 8GB | You only need recording, stream encoding, or light OpenCV | [Geizhals search](https://www.geizhals.de/?fs=Raspberry+Pi+5+8GB) | This is the sensible low-cost Linux node. In the current market, do not buy it as a cheap AI box. |
+| Raspberry Pi 5 16GB | You need more local memory for models, buffering, or multi-process work | [Geizhals search](https://www.geizhals.de/?fs=Raspberry+Pi+5+16GB) | Buy only if the extra RAM is already justified. The 16 GB model is no longer a casual upgrade. |
+| Matek H743 Wing | You want the cheapest H7 fixed-wing baseline and can verify the exact board revision | [Geizhals search](https://www.geizhals.de/?fs=Matek+H743+Wing) | Good value when you know the connector layout fits. Verify ArduPilot support and UART count before ordering. |
+| Holybro Kakute H7 Wing | You want a cleaner long-life wing FC and are willing to pay more | [Geizhals search](https://www.geizhals.de/?fs=Holybro+Kakute+H7+Wing) | Better choice than a racing-style FC when the airframe is meant to grow. |
+| Pixhawk 6C | You want carrier-style modularity and cleaner integration | [Geizhals search](https://www.geizhals.de/?fs=Pixhawk+6C) | Usually the better long-life buy if you expect later expansion and do not want to rewire the aircraft. |
+| Cube Orange+ | You want the most modular carrier-based path and accept the highest cost | [Geizhals search](https://www.geizhals.de/?fs=Cube+Orange%2B) | Only buy this when the carrier-based path is a real requirement. It is hard to justify for a first, simple build. |
+
+The short version is:
+
+- buy the Pi 5 only for non-heavy compute or recording;
+- buy the Jetson Orin Nano kit only if you need the NVIDIA software stack immediately;
+- buy the cheapest H7 wing FC that still has the interfaces you need, but move to Pixhawk/Cube-class hardware if you want the aircraft to stay flexible for years.
