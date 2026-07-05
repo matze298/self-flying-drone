@@ -36,7 +36,7 @@ artifacts/
     └── .gitkeep
 ```
 
-The exact paths can change when code exists, but keep the boundaries:
+These paths are the first slice of the canonical layout described in [Development stack](../software/development-stack.md#monorepo-layout). The exact files can change when code exists, but keep the boundaries:
 
 | Boundary | Rule |
 |---|---|

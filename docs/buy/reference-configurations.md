@@ -43,6 +43,9 @@ These are **architectures**, not all-in-one kits. They keep the project modular 
 
 Use this as the first-pass German/EU shopping list. Each row names a concrete default option per subsystem, gives a rough current street-price indicator, and explains whether to buy it now. The bias is toward hardware we can customize through open or standard software interfaces: ArduPilot, MAVLink, ELRS/CRSF, Linux, V4L2, OpenCV, GStreamer, ROS 2, and TensorRT.
 
+!!! tip "Zero-hardware entry point"
+    Do not start by buying the full aircraft. First follow the [Learning path](../start/learning-path.md): build the docs, install the `sim` workstream, and run toward the SITL smoke test. Buy the reference core when you are ready for bench integration and can explain why each interface is needed.
+
 !!! note "Prices are rough indicators"
     The price bands are planning numbers for Germany/EU shopping, not a promise of the cheapest live offer. Check at least one specialist RC/autopilot shop and one general electronics shop before ordering. Good recurring sources are FPV24, Globe-Flight, n-Factory, Drotek, Welectron, BerryBase, Reichelt, Modellbau Berlinski, direct manufacturer pages, and Google Shopping. Use Geizhals only when it has a useful listing for the exact part.
 
@@ -52,9 +55,9 @@ Start with a fixed-wing, plane-like platform for this project unless the first m
 
 The tradeoff is that a fixed-wing aircraft needs more space, has harder launch and landing phases, cannot hover, and has less precise low-speed positioning. A quadcopter is the better first platform for hover inspection, confined areas, payload pickup, or close-range obstacle work. For this repository's current learning path, fixed-wing makes the software and integration work more useful earlier while keeping the aircraft modular enough to add heavier compute later.
 
-### Buy right away
+### Buy for the bench core
 
-These parts define the aircraft layout, wiring, safety path, and first useful data collection workflow. Buy them before optimizing onboard AI compute.
+These parts define the aircraft layout, wiring, safety path, and first useful data collection workflow. Buy them when moving from SITL to bench integration, before optimizing onboard AI compute.
 
 | System | Default option | Rough price / direct source | Buy now? | Why / checks before ordering |
 |---|---|---|---|---|
@@ -110,4 +113,4 @@ Use fallbacks when the default is unavailable, the chosen airframe changes the p
 | Camera | Logitech C920s/C922 UVC | ELP UVC camera module; Arducam/Raspberry Pi Camera Module 3; selected CSI camera for Jetson | Use UVC while software is still changing. Move to CSI only when latency, size, optics, or synchronization justify extra platform-specific integration. |
 | Video downlink | Local recording first, OpenHD/WFB-ng later | Wi-Fi MAVLink video for lab only; analog FPV for pilot awareness only; Jetson/GStreamer H.264 stream | Keep local recording as the evidence source. Add downlink only after deciding whether the use case is pilot awareness, live monitoring, or machine-vision debugging. |
 
-The short version is: buy airframe, FC, RC, GNSS, telemetry, power, battery/charger, camera/storage, and tools first. Defer Jetson, video downlink, airspeed, RTK, second camera, and payload hardware until the simulator, ground-side camera workflow, and basic aircraft integration are working.
+The short version is: start with docs and SITL, then buy airframe, FC, RC, GNSS, telemetry, power, battery/charger, camera/storage, and tools for the bench core. Defer Jetson, video downlink, airspeed, RTK, second camera, and payload hardware until the simulator, ground-side camera workflow, and basic aircraft integration are working.

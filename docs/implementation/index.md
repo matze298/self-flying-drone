@@ -2,7 +2,7 @@
 
 The first real implementation should be a **fixed-wing software-in-the-loop (SITL) smoke test**. It gives us a working vertical slice before we own a finished aircraft, flight controller, camera mount, or companion computer.
 
-If an abbreviation is unfamiliar, check the [glossary](../appendix/glossary.md).
+This is step 1 in the [Learning path](../start/learning-path.md), after laptop-only docs/dev setup and before any hardware bench work. If an abbreviation is unfamiliar, check the [glossary](../appendix/glossary.md).
 
 ## Why this comes first
 

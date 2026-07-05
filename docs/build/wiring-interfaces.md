@@ -1,5 +1,7 @@
 # Wiring and interfaces
 
+Wiring starts when the project moves from SITL to the hardware bench core in the [Learning path](../start/learning-path.md). Every connection should preserve the same MAVLink, power, video, and manual-control boundaries tested in simulation.
+
 ## Interface map
 
 ```mermaid

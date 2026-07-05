@@ -3,6 +3,8 @@
 !!! warning "This is not legal advice"
     Drone rules depend on operating location, aircraft mass/class, site, airspace, radio configuration and operation type. Confirm the current national requirements before every project phase.
 
+The [Learning path](../start/learning-path.md) intentionally starts with docs and simulation because legal, site, RF, and flight-safety constraints become material before outdoor hardware tests.
+
 ## EU/Germany framing
 
 For EASA Open-category operations, VLOS requirements apply, and the remote pilot needs a way to intervene. EASA distinguishes **automatic** operations—predefined routes with a pilot able to intervene—from **autonomous** operation, where the pilot cannot intervene; the latter is not allowed in the Open category. See official sources in [References](../appendix/references.md).

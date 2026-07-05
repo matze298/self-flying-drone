@@ -73,9 +73,10 @@ extra_javascript:
 nav:
   - "1. Start here":
       - "1.1 Overview": index.md
-      - "1.2 Design principles": start/design-principles.md
-      - "1.3 Configuration chooser": start/configuration-chooser.md
-      - "1.4 Roadmap": start/roadmap.md
+      - "1.2 Learning path": start/learning-path.md
+      - "1.3 Design principles": start/design-principles.md
+      - "1.4 Configuration chooser": start/configuration-chooser.md
+      - "1.5 Roadmap": start/roadmap.md
   - "2. Buyer guide":
       - "2.1 Reference configurations": buy/reference-configurations.md
       - "2.2 Airframe and propulsion": buy/airframe-propulsion.md

@@ -2,6 +2,8 @@
 
 For concrete Germany/EU model choices and rough current price bands, use the [reference configuration buying advice](reference-configurations.md#buying-advice-for-germany) next to this checklist.
 
+This checklist starts at the **hardware bench core** step in the [Learning path](../start/learning-path.md). The cheaper entry point is still docs + SITL; do not buy this whole list just to begin software work.
+
 ## Buy now: the reference core
 
 | Item | Specification to put on purchase request | Why now |
