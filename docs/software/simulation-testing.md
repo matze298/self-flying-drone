@@ -4,6 +4,8 @@
 
 You do **not** need a drone or a flight controller to start useful software work. Start with a virtual fixed-wing aircraft and the same MAVLink-facing process boundaries planned for the real system.
 
+The first concrete implementation milestone is the [SITL smoke test](../implementation/sitl-smoke-test.md): connect to ArduPilot Plane SITL, observe telemetry, and write a small log-only artifact without commanding the vehicle.
+
 ```bash
 ./setup.py --workstream sim --no-shell
 ```
