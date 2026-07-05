@@ -1,0 +1,12 @@
+# Docs build
+site/
+
+# Py/Uv
+.venv/
+.ruff_cache/
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# Env
+.env

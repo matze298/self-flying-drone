@@ -1,0 +1,104 @@
+site_name: Fixed-Wing Autonomy Lab
+site_description: A modular buyers and developers guide for safe fixed-wing autonomy experiments.
+site_url: https://matze298.github.io/self-flying-drone/
+repo_url: https://github.com/matze298/self-flying-drone
+repo_name: matze298/self-flying-drone
+edit_uri: edit/main/docs/
+
+copyright: "Documentation © 2026 — CC BY 4.0"
+
+theme:
+  name: material
+  language: en
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Use dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Use light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.tracking
+    - navigation.footer
+    - content.code.copy
+    - content.action.edit
+    - content.tabs.link
+    - search.suggest
+    - search.highlight
+    - toc.follow
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+extra_css:
+  - assets/stylesheets/extra.css
+extra_javascript:
+  - https://unpkg.com/mermaid@10.9.3/dist/mermaid.min.js
+  - javascripts/mermaid-init.js
+
+nav:
+  - Start here:
+      - Overview: index.md
+      - Design principles: start/design-principles.md
+      - Configuration chooser: start/configuration-chooser.md
+      - Roadmap: start/roadmap.md
+  - Buyer guide:
+      - Reference configurations: buy/reference-configurations.md
+      - Airframe and propulsion: buy/airframe-propulsion.md
+      - Flight control and navigation: buy/flight-control-navigation.md
+      - Compute and cameras: buy/compute-cameras.md
+      - Video, telemetry, and RC: buy/links-radios.md
+      - Power and wiring: buy/power-wiring.md
+      - Procurement checklist: buy/procurement-checklist.md
+  - Build:
+      - Mechanical integration: build/mechanical-integration.md
+      - Wiring and interfaces: build/wiring-interfaces.md
+      - Assembly and calibration: build/assembly-calibration.md
+  - Software:
+      - System architecture: software/system-architecture.md
+      - Ground-side inference: software/ground-inference.md
+      - Onboard inference: software/onboard-inference.md
+      - Simulation and test tooling: software/simulation-testing.md
+  - Operations:
+      - Safety, legal, and ethics: operations/safety-legal.md
+      - Test gates: operations/test-gates.md
+      - Failsafe design: operations/failsafe-design.md
+  - Appendix:
+      - Bill of materials template: appendix/bom-template.md
+      - Interface contracts: appendix/interface-contracts.md
+      - Open-source licenses: appendix/open-source-licenses.md
+      - References: appendix/references.md
