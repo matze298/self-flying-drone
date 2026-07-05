@@ -12,6 +12,8 @@ flowchart LR
   M5 --> M6[6. Constrained mission response<br/>prevalidated loiter/camera action]
 ```
 
+The first implementation target is the [SITL smoke test](../implementation/sitl-smoke-test.md). It turns milestone M1 into a small repo-owned workflow before any aircraft hardware is required.
+
 ## Stop/go criteria
 
 | Milestone | “Go” only when | Never proceed when |
