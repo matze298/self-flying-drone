@@ -23,10 +23,13 @@ Primary sources are preferred. Verify current board revisions, software releases
 
 - [ArduPilot companion computers](https://ardupilot.org/dev/docs/companion-computers.html)
 - [ArduPilot MAVLink basics](https://ardupilot.org/dev/docs/mavlink-basics.html)
+- [ArduPilot SITL simulator](https://ardupilot.org/dev/docs/sitl-simulator-software-in-the-loop.html)
+- [ArduPilot SITL setup on Linux](https://ardupilot.org/dev/docs/setting-up-sitl-on-linux.html)
 - [ArduPilot Plane geofencing](https://ardupilot.org/plane/docs/geofencing.html)
 - [ArduPilot Plane advanced failsafe](https://ardupilot.org/plane/docs/advanced-failsafe-configuration.html)
 - [Matek H743 Wing support in ArduPilot Plane](https://ardupilot.org/plane/docs/common-matekh743-wing.html)
 - [MAVSDK](https://github.com/mavlink/mavsdk)
+- [MAVSDK-Python quick start](https://mavsdk.mavlink.io/main/en/python/quickstart.html)
 
 ## Compute, vision, and video
 

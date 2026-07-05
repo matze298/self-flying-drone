@@ -14,6 +14,7 @@ Use **Ubuntu 24.04** as the developer and deployment baseline where practical. I
 |---|---|---|
 | Documentation and project control | Markdown, MkDocs Material, `uv`, `prek`, Ruff, ty | The project starts as an engineering handbook. Markdown keeps design decisions reviewable, MkDocs publishes cheaply, and `uv` gives a reproducible Python tool environment. |
 | Ground-side experiments | Python, `uv`, MAVSDK-Python, OpenCV, ONNX Runtime | The first useful loop is fast iteration on laptop-side capture, telemetry association, replay, and evaluation. Python has the strongest library coverage and easiest debugging path here. |
+| Simulation-only development | ArduPilot SITL, MAVSDK-Python, pymavlink, recorded video or GStreamer test sources | A physical aircraft and flight controller should not block software work. SITL gives a virtual fixed-wing autopilot, while Python MAVLink clients exercise the same interface shape used later. |
 | Standalone support services | Rust, Cargo | Rust is a good fit for long-running telemetry, logging, validation, and stream-supervision services where memory safety and explicit error handling matter. Keep these services behind files, sockets, or message interfaces so they do not depend on unstable ROS Rust bindings. |
 | ROS integration | ROS 2 Jazzy, `colcon`, CMake, `rclcpp` | Use ROS where it solves a real robotics integration problem: nodes, topics, services, simulation, visualization, launch files, and hardware abstraction. C++ is still the most supported ROS path. |
 | Onboard accelerated perception | JetPack 7, TensorRT, GStreamer, optional Isaac ROS or DeepStream | Jetson deployment should follow NVIDIA-supported APIs and containers. TensorRT and GStreamer are the relevant acceleration and video primitives; Isaac ROS or DeepStream should be added only when their packaged nodes reduce custom code. |
@@ -36,6 +37,7 @@ Keep the monorepo, but split build roots by toolchain:
 docs/                  # MkDocs handbook
 src/                   # Python package and docs helper code
 tools/python/          # Future Python CLIs and replay utilities
+tools/sim/             # Future simulation launchers and SITL helpers
 services/rust/         # Future Cargo workspace for standalone services
 ros_ws/src/            # Future ROS 2 packages built with colcon
 aircraft/              # Future parameters, missions, wiring records
@@ -52,6 +54,7 @@ This keeps one source of truth while allowing a developer to enter only the rele
 |---|---|
 | Read or edit docs | `./setup.py --workstream docs --no-shell` |
 | Work on Python checks and tooling | `./setup.py --workstream python --no-shell` |
+| Work with virtual aircraft and MAVLink clients | `./setup.py --workstream sim --no-shell` |
 | Work on Rust services | Future Cargo/rustup setup; currently intentionally not implemented |
 | Work on ROS/C++ packages | Future ROS 2 Jazzy and `colcon` setup; currently intentionally not implemented |
 | Work on Jetson deployment | Future JetPack/container setup on target hardware; currently intentionally not implemented |

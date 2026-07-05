@@ -1,5 +1,29 @@
 # Simulation and test tooling
 
+## Simulation-first workflow
+
+You do **not** need a drone or a flight controller to start useful software work. Start with a virtual fixed-wing aircraft and the same MAVLink-facing process boundaries planned for the real system.
+
+```bash
+./setup.py --workstream sim --no-shell
+```
+
+This installs the Python-side client tools used by this repository:
+
+| Tool | Why it is in the sim workstream |
+|---|---|
+| MAVSDK-Python | High-level async client for experiments against a running simulator |
+| pymavlink | Low-level MAVLink inspection, decoding, and edge-case testing |
+| aioconsole | Convenient interactive async REPL while exploring MAVSDK calls |
+
+ArduPilot SITL itself is intentionally treated as an **external checkout**. It builds native autopilot code and uses system packages, so `uv` should not manage it. Follow ArduPilot’s Linux SITL setup, keep the checkout outside normal project history, and then run a fixed-wing simulator such as:
+
+```bash
+sim_vehicle.py -v ArduPlane --console --map -w
+```
+
+After SITL is running, connect project tools to the simulator over MAVLink and keep the first behavior log-only.
+
 ## Simulate the interfaces, not just the airframe
 
 | Layer | Tool | Goal |
@@ -20,6 +44,12 @@ recorded MAVLink → telemetry interface ─────────────
 ```
 
 This makes every model update testable against the same flight data.
+
+## What simulation can and cannot prove
+
+Simulation can prove interface behavior: MAVLink subscriptions, stale-data handling, event validation, mission-request rejection, replay determinism, and failure behavior when a software service restarts.
+
+Simulation cannot prove airframe stability, CG, vibration, RF behavior, launch/landing handling, camera exposure, power integrity, or real flight-controller wiring. Those require bench tests, hardware-in-the-loop tests, and eventually conservative flight tests.
 
 ## SITL release checks
 
