@@ -48,6 +48,8 @@ data/                  # Manifests only; keep raw videos/datasets outside normal
 
 This keeps one source of truth while allowing a developer to enter only the relevant environment.
 
+Treat this as the canonical target layout. Individual implementation pages may introduce one subdirectory at a time, but they should not invent a second root structure.
+
 ## Slim setup model
 
 | Need | Setup path |
@@ -55,6 +57,7 @@ This keeps one source of truth while allowing a developer to enter only the rele
 | Read or edit docs | `./setup.py --workstream docs --no-shell` |
 | Work on Python checks and tooling | `./setup.py --workstream python --no-shell` |
 | Work with virtual aircraft and MAVLink clients | `./setup.py --workstream sim --no-shell` |
+| Work on ground-side vision | Use `sim` now for MAVLink; add a future `vision`/`ground` group when the first CLI exists |
 | Work on Rust services | Future Cargo/rustup setup; currently intentionally not implemented |
 | Work on ROS/C++ packages | Future ROS 2 Jazzy and `colcon` setup; currently intentionally not implemented |
 | Work on Jetson deployment | Future JetPack/container setup on target hardware; currently intentionally not implemented |

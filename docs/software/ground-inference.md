@@ -18,13 +18,13 @@ flowchart LR
 
 ## Minimum viable toolchain
 
+Use the repo-managed `uv` setup path. Ground inference starts after the SITL and bench interfaces are understood, but before onboard compute is required.
+
 ```bash
-# environment example; pin exact versions per project release
-python -m venv .venv
-source .venv/bin/activate
-pip install opencv-python numpy onnxruntime mavsdk pandas
-# add your selected detector package or ONNX model wrapper
+./setup.py --workstream sim --no-shell
 ```
+
+The `sim` workstream already installs the MAVLink client tools used for telemetry association. When the first real vision CLI lands, add a dedicated `vision` or `ground` dependency group to `pyproject.toml` instead of installing ad hoc packages with `pip`. Expected first dependencies are OpenCV, NumPy, ONNX Runtime, pandas or Polars, and the selected detector wrapper.
 
 ### Responsibilities by process
 
@@ -39,12 +39,15 @@ pip install opencv-python numpy onnxruntime mavsdk pandas
 
 ## Start task: orange marker detection
 
-1. Make a high-contrast, known-size orange ground marker.
-2. Record video during manual or waypoint flights over a safe field.
-3. Run detector offline on the original recording.
-4. Compare false positives, missed detections and confidence distribution.
-5. Move to live laptop inference at low resolution.
-6. Log only; do not request aircraft behavior.
+Follow the learning path order:
+
+1. Use a recorded or synthetic video clip before flying.
+2. Make a high-contrast, known-size orange ground marker.
+3. Record video during manual or waypoint flights over a safe field only after the relevant flight gates pass.
+4. Run detector offline on the original recording.
+5. Compare false positives, missed detections and confidence distribution.
+6. Move to live laptop inference at low resolution.
+7. Log only; do not request aircraft behavior.
 
 ## Event validation example
 

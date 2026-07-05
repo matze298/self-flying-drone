@@ -33,29 +33,7 @@ flowchart TB
 
 ## Repository structure
 
-```text
-fixed-wing-autonomy/
-├── docs/                 # This site
-├── aircraft/
-│   ├── parameters/       # ArduPilot parameter exports
-│   ├── missions/         # Waypoints / fence files
-│   └── wiring/           # schematics, photos, pin maps
-├── companion/
-│   ├── services/         # systemd units / Docker files
-│   └── config/           # mavlink-router, camera, health policies
-├── vision/
-│   ├── capture/
-│   ├── inference/
-│   ├── datasets/
-│   ├── models/           # manifests, not large weights by default
-│   └── evaluation/
-├── ground/
-│   └── gcs-tools/
-└── tests/
-    ├── sitl/
-    ├── replay/
-    └── checklists/
-```
+Use the canonical target layout in [Development stack](development-stack.md#monorepo-layout). Implementation pages should add directories gradually from that layout instead of creating a separate structure.
 
 ## Message contract: detection event
 

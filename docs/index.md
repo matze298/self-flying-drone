@@ -59,7 +59,8 @@ This repository uses MkDocs Material because the content remains plain Markdown,
 
 ## How to use this guide
 
-1. Decide how much payload and future compute headroom you need in [Configuration chooser](start/configuration-chooser.md).
-2. Freeze interfaces before buying individual parts.
-3. Buy safety-critical modules and the radio system first; companion compute can be staged.
-4. Use each [test gate](operations/test-gates.md) as a release criterion, not as a suggestion.
+1. Follow the [Learning path](start/learning-path.md): start with docs and SITL before buying aircraft hardware.
+2. Decide how much payload and future compute headroom you need in [Configuration chooser](start/configuration-chooser.md).
+3. Freeze interfaces before buying individual parts.
+4. Buy safety-critical modules and the radio system before companion compute.
+5. Use each [test gate](operations/test-gates.md) as a release criterion, not as a suggestion.

@@ -1,5 +1,7 @@
 # Assembly and calibration
 
+This chapter starts after the [Learning path](../start/learning-path.md) reaches hardware bench work. SITL and bench power checks should already be understood before a propeller is fitted.
+
 ## Assembly order
 
 1. Build the airframe and validate control geometry with **no propeller fitted**.

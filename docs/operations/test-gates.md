@@ -4,6 +4,7 @@ Each gate is a documented release. A “pass” includes a log, configuration ve
 
 | Gate | Scope | Pass criterion | Exit action |
 |---|---|---|---|
+| **G-1 — SITL smoke** | Virtual ArduPilot Plane, MAVLink observation | Repo command observes heartbeat/telemetry without commanding the vehicle | Start hardware bench planning |
 | **G0 — Bench power** | Power, wiring, smoke check | No overheating, correct voltage rails, current sensor plausible | Install prop only after all later electrical steps are complete |
 | **G1 — Sensor/RC** | FC orientation, receiver, GNSS, switches | Correct movement and mode labels; no prop fitted | Configure failsafes |
 | **G2 — Manual airframe** | Launch, trim, landing, CG | Repeatable flights and no unexplained behavior | Add/validate autopilot modes |

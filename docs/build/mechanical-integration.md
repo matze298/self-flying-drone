@@ -1,5 +1,7 @@
 # Mechanical integration
 
+Mechanical integration belongs to the hardware bench and manual-aircraft steps of the [Learning path](../start/learning-path.md). Do not use airframe work to skip the simulator, wiring, or safety-gate discipline.
+
 ## Fuselage layout
 
 ```mermaid
