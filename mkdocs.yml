@@ -90,6 +90,7 @@ nav:
       - Assembly and calibration: build/assembly-calibration.md
   - Software:
       - System architecture: software/system-architecture.md
+      - Development stack: software/development-stack.md
       - Ground-side inference: software/ground-inference.md
       - Onboard inference: software/onboard-inference.md
       - Simulation and test tooling: software/simulation-testing.md
