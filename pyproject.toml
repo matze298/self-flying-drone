@@ -28,6 +28,11 @@ docs = [
     "mkdocs>=1.6.1",
     "mkdocs-material<10.0",
 ]
+sim = [
+    "aioconsole>=0.8.2",
+    "mavsdk>=3.15.3",
+    "pymavlink>=2.4.49",
+]
 
 [tool.ruff]
 line-length = 120

@@ -25,10 +25,11 @@ PROJECT_VENV = PROJECT_ROOT / ".venv"
 VENV_BIN = PROJECT_VENV / "bin"
 VENV_PYTHON = VENV_BIN / "python"
 DEFAULT_WORKSTREAMS = ("docs",)
-ALL_WORKSTREAMS = ("docs", "python", "rust", "ros", "jetson")
+ALL_WORKSTREAMS = ("docs", "python", "sim", "rust", "ros", "jetson")
 WORKSTREAM_GROUPS = {
     "docs": ("docs",),
     "python": ("dev",),
+    "sim": ("sim",),
     "rust": (),
     "ros": (),
     "jetson": (),
@@ -65,6 +66,15 @@ def normalize_workstreams(
         raise NotImplementedError(message)
 
     return list(dict.fromkeys(workstreams))
+
+
+def report_workstream_notes(workstreams: Sequence[str]) -> None:
+    """Print setup notes for workstreams that need external tools."""
+    if "sim" not in workstreams:
+        return
+
+    typer.echo("Simulation Python tools are installed.")
+    typer.echo("ArduPilot SITL is an external checkout with system dependencies; follow the docs workflow.")
 
 
 def sync_command(workstreams: Sequence[str]) -> list[str]:
@@ -110,7 +120,10 @@ def setup(
         None,
         "--workstream",
         "-w",
-        help="Development workstream to set up: docs, python, rust, ros, or jetson. Repeat for multiple workstreams.",
+        help=(
+            "Development workstream to set up: docs, python, sim, rust, ros, or jetson. "
+            "Repeat for multiple workstreams."
+        ),
     ),
     docs: bool = typer.Option(
         True,
@@ -150,6 +163,8 @@ def setup(
             cwd=PROJECT_ROOT,
             check=True,
         )
+
+    report_workstream_notes(selected_workstreams)
 
     if shell:
         activate_shell()

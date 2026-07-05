@@ -16,8 +16,9 @@ This repository is a fixed-wing autonomy buyers and developers guide. Use these 
 - Use `uv` for Python environments, Python dependency groups, docs tooling, and local repo checks.
 - `setup.py` is a self-executable uv script. Keep `./setup.py` working.
 - The default setup path should create/update `.venv` and enter an interactive shell.
-- Supported setup workstreams are `docs`, `python`, `rust`, `ros`, and `jetson`.
-- `docs` and `python` are implemented through uv dependency groups.
+- Supported setup workstreams are `docs`, `python`, `sim`, `rust`, `ros`, and `jetson`.
+- `docs`, `python`, and `sim` are implemented through uv dependency groups.
+- The `sim` workstream installs Python-side MAVLink/SITL client tools. ArduPilot SITL remains an external checkout with system dependencies.
 - `rust`, `ros`, `jetson`, and `--all-workstreams` should fail clearly until real workspaces/installers exist.
 - Do not pretend `uv` manages Rust, ROS, C++, CUDA, TensorRT, or system packages.
 
@@ -36,11 +37,11 @@ This repository is a fixed-wing autonomy buyers and developers guide. Use these 
 Useful checks:
 
 ```bash
-uv run ruff format --check .
-uv run ruff check .
-uv run ty check
-uv run mkdocs build --strict --site-dir /tmp/drone_build_site
-uv run prek run --all-files
+uv run --group dev ruff format --check .
+uv run --group dev ruff check .
+uv run --group dev ty check
+uv run --group docs mkdocs build --strict --site-dir /tmp/drone_build_site
+uv run --group dev prek run --all-files
 ```
 
 ## Documentation Decisions
@@ -71,6 +72,7 @@ The intended long-term layout is:
 docs/                  # MkDocs handbook
 src/                   # Python package and docs helper code
 tools/python/          # Future Python CLIs and replay utilities
+tools/sim/             # Future simulation launchers and SITL helpers
 services/rust/         # Future Cargo workspace for standalone services
 ros_ws/src/            # Future ROS 2 packages built with colcon
 aircraft/              # Future parameters, missions, wiring records

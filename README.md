@@ -26,14 +26,15 @@ Set up a specific development workstream without installing unrelated toolchains
 ```bash
 ./setup.py --workstream docs --no-shell
 ./setup.py --workstream python --no-shell
+./setup.py --workstream sim --no-shell
 ```
 
-Available workstreams are `docs`, `python`, `rust`, `ros`, and `jetson`. Workstreams that need a future Rust, ROS 2, or Jetson installer fail clearly until the repository contains those packages.
+Available workstreams are `docs`, `python`, `sim`, `rust`, `ros`, and `jetson`. Workstreams that need a future Rust, ROS 2, or Jetson installer fail clearly until the repository contains those packages. The `sim` workstream installs Python-side MAVLink/SITL client tooling; ArduPilot SITL itself remains an external checkout with system dependencies.
 
 Serve the documentation site:
 
 ```bash
-uv run mkdocs serve
+uv run --group docs mkdocs serve
 ```
 
 Open `http://127.0.0.1:8000`.
@@ -60,6 +61,7 @@ Use a slim environment per workstream:
 |---|---|---|---|
 | Documentation and project tooling | Markdown, MkDocs Material, `uv`, `prek`, Ruff, ty | This guide, checks, small repo automation | Fast local setup and reproducible Python tooling |
 | Python tools | Python, `uv`, MAVSDK-Python, OpenCV, ONNX Runtime | Ground-side inference, replay, evaluation, logs, CLIs | Fast iteration and the strongest robotics/ML scripting ecosystem |
+| Simulation | ArduPilot SITL, MAVSDK-Python, pymavlink, recorded video/GStreamer sources | Virtual aircraft testing, MAVLink policy checks, replay before hardware | Lets software work start without an aircraft or flight controller |
 | Rust services | Rust, Cargo | Standalone telemetry, logging, policy, or stream-supervision daemons | Memory safety and robust long-running services without forcing C++ everywhere |
 | ROS 2 integration | Ubuntu 24.04, ROS 2 Jazzy, `colcon`, CMake, `rclcpp` | Multi-process robotics integration, simulation, ROS-native nodes | Best-supported ROS 2 path on the same Ubuntu generation as JetPack 7 |
 | Jetson deployment | JetPack 7, TensorRT, GStreamer, Isaac ROS/DeepStream only when needed | Onboard accelerated perception and production deployment | Uses NVIDIA-supported acceleration and deployment paths |
