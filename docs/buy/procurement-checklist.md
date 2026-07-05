@@ -1,5 +1,7 @@
 # Procurement checklist
 
+For concrete Germany/EU model choices and rough current price bands, use the [reference configuration buying advice](reference-configurations.md#buying-advice-for-germany) next to this checklist.
+
 ## Buy now: the reference core
 
 | Item | Specification to put on purchase request | Why now |
