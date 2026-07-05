@@ -17,7 +17,7 @@
 | Calibration | When | Record |
 |---|---|---|
 | Accelerometer / board orientation | Every FC remount | Screenshot and parameter export |
-| Compass | After relocation or wiring changes | Interference check with motor system | 
+| Compass | After relocation or wiring changes | Interference check with motor system |
 | Radio endpoints / mode switch | After transmitter change | Channel map and switch labels |
 | Power/current | Before battery failsafe tuning | Meter comparison and parameters |
 | Camera intrinsics | After lens/resolution change | Calibration dataset + resulting matrix |

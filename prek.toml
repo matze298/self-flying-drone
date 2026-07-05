@@ -8,8 +8,8 @@ hooks = [
     { id = "check-added-large-files" },
     { id = "check-merge-conflict" },
     { id = "mixed-line-ending" },
-     { id = "no-commit-to-branch"}, 
-     { id = "check-shebang-scripts-are-executable"}, 
+     { id = "no-commit-to-branch"},
+     { id = "check-shebang-scripts-are-executable"},
 ]
 
 [[repos]]
