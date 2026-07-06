@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[3]
 SMOKE_TEST_PATH = PROJECT_ROOT / "tools" / "sitl" / "smoke_test.py"
 EXPECTED_HEARTBEAT_WAIT_S = 0.123
+EXPECTED_CAPTURED_AT = "2026-07-06T12:34:56Z"
 EXPECTED_LATITUDE_DEG = 47.397742
 EXPECTED_LONGITUDE_DEG = 8.545594
 EXPECTED_RELATIVE_ALTITUDE_M = 12.3
@@ -71,6 +72,7 @@ def test_decode_heartbeat_reports_manual_unarmed(smoke_test: ModuleType) -> None
         heartbeat,
         position=position,
         heartbeat_wait_s=EXPECTED_HEARTBEAT_WAIT_S,
+        captured_at=EXPECTED_CAPTURED_AT,
     )
 
     assert summary.system_id == 1
@@ -118,6 +120,29 @@ def test_write_artifact_writes_sorted_pretty_json(smoke_test: ModuleType, tmp_pa
     assert output.read_text(encoding="utf-8") == '{\n  "schema_version": 1,\n  "source": "sitl-smoke-test"\n}\n'
 
 
+def test_create_artifact_includes_capture_timestamp(smoke_test: ModuleType) -> None:
+    """Smoke artifacts should record when the observation was captured."""
+    summary = smoke_test.HeartbeatSummary(
+        system_id=1,
+        component_id=0,
+        mode="MANUAL",
+        armed=False,
+        custom_mode=0,
+        vehicle_type=1,
+        autopilot=3,
+        heartbeat_wait_s=EXPECTED_HEARTBEAT_WAIT_S,
+        captured_at=EXPECTED_CAPTURED_AT,
+        latitude_deg=None,
+        longitude_deg=None,
+        relative_altitude_m=None,
+    )
+
+    artifact = smoke_test.create_artifact(summary)
+
+    assert artifact["captured_at"] == EXPECTED_CAPTURED_AT
+    assert artifact["heartbeat"]["captured_at"] == EXPECTED_CAPTURED_AT
+
+
 def test_ensure_unarmed_exits_when_armed(smoke_test: ModuleType) -> None:
     """The smoke test should fail fast if the vehicle starts armed."""
     summary = smoke_test.HeartbeatSummary(
@@ -129,6 +154,7 @@ def test_ensure_unarmed_exits_when_armed(smoke_test: ModuleType) -> None:
         vehicle_type=1,
         autopilot=3,
         heartbeat_wait_s=0.123,
+        captured_at=EXPECTED_CAPTURED_AT,
         latitude_deg=None,
         longitude_deg=None,
         relative_altitude_m=None,

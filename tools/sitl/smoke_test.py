@@ -6,6 +6,7 @@ from __future__ import annotations
 import pathlib
 import time
 from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Annotated, Protocol
 
 import orjson
@@ -24,6 +25,11 @@ if mavutil.mavlink is None:
 mavlink = mavutil.mavlink
 
 
+def utc_now() -> str:
+    """Returns the current UTC time as a string."""
+    return datetime.now(tz=UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
 @dataclass(frozen=True)
 class HeartbeatSummary:
     """Decoded heartbeat fields for the smoke test."""
@@ -36,6 +42,7 @@ class HeartbeatSummary:
     vehicle_type: int
     autopilot: int
     heartbeat_wait_s: float
+    captured_at: str
     latitude_deg: float | None
     longitude_deg: float | None
     relative_altitude_m: float | None
@@ -78,7 +85,12 @@ class GlobalPosition:
 
 
 def decode_heartbeat(
-    connection: mavserial, heartbeat: HeartbeatLike, *, position: GlobalPosition, heartbeat_wait_s: float = 0
+    connection: mavserial,
+    heartbeat: HeartbeatLike,
+    *,
+    position: GlobalPosition,
+    captured_at: str,
+    heartbeat_wait_s: float = 0,
 ) -> HeartbeatSummary:
     """Decode the heartbeat fields we care about without sending commands."""
     armed = bool(heartbeat.base_mode & mavlink.MAV_MODE_FLAG_SAFETY_ARMED)
@@ -95,6 +107,7 @@ def decode_heartbeat(
         latitude_deg=position.lat,
         longitude_deg=position.lon,
         relative_altitude_m=position.relative_alt,
+        captured_at=captured_at,
     )
 
 
@@ -105,6 +118,7 @@ def create_artifact(summary: HeartbeatSummary) -> dict[str, object]:
         "source": "sitl-smoke-test",
         "connected": True,
         "commanded_actions": [],
+        "captured_at": summary.captured_at,
         "heartbeat": asdict(summary),
     }
 
@@ -145,6 +159,7 @@ def run_smoke_test(connect: str, timeout: float, output: pathlib.Path) -> Heartb
         heartbeat,
         position=GlobalPosition.from_message(connection, timeout=timeout),
         heartbeat_wait_s=heartbeat_wait_s,
+        captured_at=utc_now(),
     )
     ensure_unarmed(summary)
     ensure_fixed_wing(summary)

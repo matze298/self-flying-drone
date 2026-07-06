@@ -98,14 +98,20 @@ Current artifact shape:
 
 ```json
 {
+  "captured_at": "2026-07-06T12:34:56Z",
   "commanded_actions": [],
   "connected": true,
   "heartbeat": {
     "armed": false,
     "autopilot": 3,
+    "captured_at": "2026-07-06T12:34:56Z",
     "component_id": 0,
     "custom_mode": 0,
+    "heartbeat_wait_s": 0.123,
+    "latitude_deg": 47.397742,
+    "longitude_deg": 8.545594,
     "mode": "MANUAL",
+    "relative_altitude_m": 12.3,
     "system_id": 1,
     "vehicle_type": 1
   },
