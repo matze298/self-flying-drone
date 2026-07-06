@@ -39,6 +39,44 @@ uv run --group docs mkdocs serve
 
 Open `http://127.0.0.1:8000`.
 
+## SITL smoke test
+
+The cheapest useful software entry point is ArduPilot Plane SITL. It proves this repo can observe a virtual fixed-wing aircraft over MAVLink before any hardware is required.
+
+Set up the repo-side simulator tools:
+
+```bash
+./setup.py --workstream sim --no-shell
+```
+
+Create or reuse the external ArduPilot checkout and install upstream prerequisites when needed:
+
+```bash
+uv run tools/sitl/run.py --setup-only
+uv run tools/sitl/run.py --install-prereqs --setup-only
+```
+
+Start ArduPlane SITL with a stable MAVLink output for repo tools:
+
+```bash
+uv run tools/sitl/run.py --mavlink-out udp:127.0.0.1:14550
+```
+
+After the first successful build, repeated local runs can usually skip ArduPilot's rebuild:
+
+```bash
+uv run tools/sitl/run.py --no-wipe -- -N
+```
+
+Run the observation-only smoke test from a second terminal:
+
+```bash
+uv run --group sim python tools/sitl/smoke_test.py --connect udp:127.0.0.1:14550
+cat artifacts/sitl/smoke.json
+```
+
+The smoke test writes a JSON artifact, verifies the vehicle is fixed-wing, verifies it is unarmed, and records no commanded actions. Full setup notes are in `tools/sitl/README.md`.
+
 Run formatting, linting, and type checks:
 
 ```bash

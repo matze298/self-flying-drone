@@ -24,6 +24,8 @@ This repository is a fixed-wing autonomy buyers and developers guide. Use these 
 
 ## Quality Gates
 
+- Prefer `pytest` for Python tests. Avoid adding new `unittest`-style tests unless there is a specific reason.
+- Mirror source/tool paths under `tests/`; for example, test `tools/sitl/run.py` in `tests/tools/sitl/test_run.py`.
 - Ruff is configured with `select = ["ALL"]`; fix issues where practical.
 - Ruff line length is 120.
 - Ruff docstrings use Google style.
@@ -72,7 +74,7 @@ The intended long-term layout is:
 docs/                  # MkDocs handbook
 src/                   # Python package and docs helper code
 tools/python/          # Future Python CLIs and replay utilities
-tools/sim/             # Future simulation launchers and SITL helpers
+tools/sitl/            # ArduPilot SITL checkout/run helpers
 services/rust/         # Future Cargo workspace for standalone services
 ros_ws/src/            # Future ROS 2 packages built with colcon
 aircraft/              # Future parameters, missions, wiring records

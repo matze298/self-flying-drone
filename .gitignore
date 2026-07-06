@@ -10,3 +10,9 @@ __pycache__/
 
 # Env
 .env
+
+# Temporary test files
+tmp/
+
+# Generated smoke-test artifacts
+artifacts/

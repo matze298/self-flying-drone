@@ -1,10 +1,10 @@
 [project]
 name = "drone-build"
 version = "0.1.0"
-description = "Add your description here"
+description = "Custom drone build including Docs, Simulation and Operation Code."
 readme = "README.md"
 authors = [
-    { name = "Matthias Rath", email = "matze29894@gmail.com" }
+    { name = "Matthias Rath", email = "matthias.rath4@gmail.com" }
 ]
 requires-python = ">=3.14"
 dependencies = [
@@ -21,6 +21,7 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "prek>=0.4.8",
+    "pytest>=9.1.1",
     "ruff>=0.15.20",
     "ty>=0.0.56",
 ]
@@ -31,35 +32,6 @@ docs = [
 sim = [
     "aioconsole>=0.8.2",
     "mavsdk>=3.15.3",
+    "orjson>=3.11.9",
     "pymavlink>=2.4.49",
 ]
-
-[tool.ruff]
-line-length = 120
-target-version = "py314"
-
-[tool.ruff.lint]
-select = ["ALL"]
-ignore = [
-    "COM812", # Avoid conflict with Ruff formatter.
-    "D203",   # Use no blank line before class docstrings.
-    "D213",   # Use multi-line docstring summaries on the first line.
-    "ISC001", # Avoid conflict with Ruff formatter.
-]
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
-
-[tool.ruff.lint.per-file-ignores]
-"setup.py" = [
-    "B008",   # Typer option declarations are intentionally created in parameter defaults.
-    "FBT001", # Typer boolean flags are declared as bool parameters by design.
-    "FBT002", # Typer's working default-value API requires bool defaults in the signature.
-    "FBT003", # Typer option declarations pass bool defaults positionally.
-    "S603",   # setup.py executes the fixed local `uv sync` command, not user-provided input.
-    "S606",   # setup.py intentionally replaces itself with the user's shell inside `.venv`.
-]
-
-[tool.ty.rules]
-missing-type-argument = "error"
-possibly-unresolved-reference = "warn"

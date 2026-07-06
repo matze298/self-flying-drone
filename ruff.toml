@@ -1,0 +1,38 @@
+line-length = 120
+target-version = "py314"
+
+[lint]
+select = ["ALL"]
+ignore = [
+    "COM812", # Avoid conflict with Ruff formatter.
+    "D203",   # Use no blank line before class docstrings.
+    "D213",   # Use multi-line docstring summaries on the first line.
+    "EM101",  # Allow direct exception messages for small CLI failures.
+    "ISC001", # Avoid conflict with Ruff formatter.
+    "TRY003", # Avoid custom exception classes for simple guard failures.
+]
+
+[lint.pydocstyle]
+convention = "google"
+
+[lint.pylint]
+max-args = 10
+
+[lint.per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Pytest tests use plain assert statements for readable expectations.
+]
+"tools/sitl/run.py" = [
+    "FBT002",  # Typer boolean flags are declared as bool defaults for CLI option ergonomics.
+    "PLR0913", # This CLI exposes several independent options; splitting would make help text harder to scan.
+    "S603",    # The helper intentionally launches fixed external tools: git, ArduPilot prereqs, and sim_vehicle.py.
+    "S607",    # The helper intentionally uses PATH for git so the user's configured Git install is used.
+]
+"setup.py" = [
+    "B008",   # Typer option declarations are intentionally created in parameter defaults.
+    "FBT001", # Typer boolean flags are declared as bool parameters by design.
+    "FBT002", # Typer's working default-value API requires bool defaults in the signature.
+    "FBT003", # Typer option declarations pass bool defaults positionally.
+    "S603",   # setup.py executes the fixed local `uv sync` command, not user-provided input.
+    "S606",   # setup.py intentionally replaces itself with the user's shell inside `.venv`.
+]

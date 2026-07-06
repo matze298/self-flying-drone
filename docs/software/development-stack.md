@@ -37,7 +37,7 @@ Keep the monorepo, but split build roots by toolchain:
 docs/                  # MkDocs handbook
 src/                   # Python package and docs helper code
 tools/python/          # Future Python CLIs and replay utilities
-tools/sim/             # Future simulation launchers and SITL helpers
+tools/sitl/            # ArduPilot SITL checkout/run helpers
 services/rust/         # Future Cargo workspace for standalone services
 ros_ws/src/            # Future ROS 2 packages built with colcon
 aircraft/              # Future parameters, missions, wiring records
