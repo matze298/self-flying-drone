@@ -78,7 +78,14 @@ Run the observation-only smoke test from a second terminal:
 uv run --group sim python tools/sitl/smoke_test.py --connect udp:127.0.0.1:14550
 ```
 
-The command writes `artifacts/sitl/smoke.json`, verifies the heartbeat is fixed-wing, verifies the vehicle is unarmed, records `commanded_actions: []`, and prints a short human-readable summary.
+The command writes `artifacts/sitl/smoke.json`, verifies the heartbeat matches the expected vehicle type, verifies the vehicle is unarmed, records `commanded_actions: []`, and prints a short human-readable summary. The default expected vehicle is `fixed-wing`, matching this repo's fixed-wing-first learning path.
+
+When intentionally testing a different SITL vehicle, pass the expected type explicitly:
+
+```bash
+uv run tools/sitl/run.py --vehicle rover
+uv run --group sim python tools/sitl/smoke_test.py --expected-vehicle rover
+```
 
 ## Telemetry to capture first
 
@@ -148,16 +155,15 @@ The current script records battery telemetry when SITL publishes it, but missing
 | Wrong endpoint | CLI prints the attempted endpoint and times out |
 | No heartbeat | CLI fails before subscribing to telemetry |
 | Vehicle is armed | CLI exits before writing a passing result |
-| Vehicle is not fixed-wing | CLI exits before writing a passing result |
+| Vehicle type does not match `--expected-vehicle` | CLI exits before writing a passing result |
 
 ## Future steps
 
 Add these only after the basic heartbeat smoke test remains stable:
 
-1. Capture link timing and heartbeat age so stale telemetry can be detected explicitly.
-2. Add a minimal position or relative-altitude sample from `GLOBAL_POSITION_INT`.
-3. Add a `--expected-vehicle` option only if non-plane smoke tests become useful.
-4. Keep command-sending tests separate from this smoke test until command policy and safety gates are documented.
+1. Add stricter opt-in requirements for position and battery once SITL startup timing is stable enough.
+2. Add an ArduPilot autopilot assertion if we start connecting the smoke test to non-ArduPilot MAVLink endpoints.
+3. Keep command-sending tests separate from this smoke test until command policy and safety gates are documented.
 
 ## Done for milestone 1
 

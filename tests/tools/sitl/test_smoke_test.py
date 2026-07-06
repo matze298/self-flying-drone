@@ -227,3 +227,60 @@ def test_ensure_unarmed_exits_when_armed(smoke_test: ModuleType) -> None:
         smoke_test.ensure_unarmed(summary)
 
     assert error.value.exit_code == 1
+
+
+def test_ensure_vehicle_type_accepts_expected_vehicle(smoke_test: ModuleType) -> None:
+    """Vehicle type validation should allow the selected expected vehicle."""
+    if mavutil.mavlink is None:
+        raise RuntimeError("pymavlink dialect is not loaded.")
+
+    mavlink = mavutil.mavlink
+    summary = smoke_test.HeartbeatSummary(
+        system_id=1,
+        component_id=0,
+        mode="MANUAL",
+        armed=False,
+        custom_mode=0,
+        vehicle_type=mavlink.MAV_TYPE_GROUND_ROVER,
+        autopilot=3,
+        heartbeat_wait_s=0.123,
+        captured_at=EXPECTED_CAPTURED_AT,
+        latitude_deg=None,
+        longitude_deg=None,
+        relative_altitude_m=None,
+        battery_voltage_v=None,
+        battery_current_a=None,
+        battery_remaining_percent=None,
+    )
+
+    smoke_test.ensure_vehicle_type(summary, smoke_test.ExpectedVehicle.ROVER)
+
+
+def test_ensure_vehicle_type_exits_on_unexpected_vehicle(smoke_test: ModuleType) -> None:
+    """Vehicle type validation should fail when SITL runs a different vehicle."""
+    if mavutil.mavlink is None:
+        raise RuntimeError("pymavlink dialect is not loaded.")
+
+    mavlink = mavutil.mavlink
+    summary = smoke_test.HeartbeatSummary(
+        system_id=1,
+        component_id=0,
+        mode="MANUAL",
+        armed=False,
+        custom_mode=0,
+        vehicle_type=mavlink.MAV_TYPE_GROUND_ROVER,
+        autopilot=3,
+        heartbeat_wait_s=0.123,
+        captured_at=EXPECTED_CAPTURED_AT,
+        latitude_deg=None,
+        longitude_deg=None,
+        relative_altitude_m=None,
+        battery_voltage_v=None,
+        battery_current_a=None,
+        battery_remaining_percent=None,
+    )
+
+    with pytest.raises(typer.Exit) as error:
+        smoke_test.ensure_vehicle_type(summary, smoke_test.ExpectedVehicle.FIXED_WING)
+
+    assert error.value.exit_code == 1

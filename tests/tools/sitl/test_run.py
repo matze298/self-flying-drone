@@ -96,6 +96,18 @@ def test_build_sim_vehicle_command_can_launch_copter(helper: ModuleType) -> None
     assert not any(part.startswith("--out=") for part in command)
 
 
+def test_build_sim_vehicle_command_launches_heli_as_copter_frame(helper: ModuleType) -> None:
+    """Helicopter SITL should use ArduCopter with the heli frame."""
+    repo_path = pathlib.Path("ardupilot")
+
+    command = helper.build_sim_vehicle_command(repo_path, vehicle=helper.Vehicle.heli, wipe=False, mavlink_out=None)
+
+    assert "-v" in command
+    assert "ArduCopter" in command
+    assert "-f" in command
+    assert "heli" in command
+
+
 def test_build_sim_vehicle_command_can_override_mavlink_output(helper: ModuleType) -> None:
     """The MAVLink output endpoint should be configurable."""
     repo_path = pathlib.Path("ardupilot")

@@ -47,7 +47,7 @@ VEHICLE_TARGETS = {
     Vehicle.copter: "ArduCopter",
     Vehicle.rover: "Rover",
     Vehicle.sub: "ArduSub",
-    Vehicle.heli: "Helicopter",
+    Vehicle.heli: "ArduCopter",
     Vehicle.blimp: "Blimp",
 }
 
@@ -104,6 +104,8 @@ def build_sim_vehicle_command(
 ) -> list[str]:
     """Build the ArduPilot SITL command."""
     command = [os.fspath(repo_path / SIM_VEHICLE), "-v", VEHICLE_TARGETS[vehicle]]
+    if vehicle is Vehicle.heli:
+        command.extend(("-f", "heli"))
     if map_window:
         command.append("--map")
     if console:

@@ -7,6 +7,7 @@ import pathlib
 import time
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
+from enum import StrEnum
 from typing import TYPE_CHECKING, Annotated, Protocol
 
 import orjson
@@ -28,6 +29,15 @@ mavlink = mavutil.mavlink
 def utc_now() -> str:
     """Returns the current UTC time as a string."""
     return datetime.now(tz=UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+class ExpectedVehicle(StrEnum):
+    """Vehicle types supported by the smoke-test expectation."""
+
+    FIXED_WING = "fixed-wing"
+    COPTER = "copter"
+    ROVER = "rover"
+    HELICOPTER = "helicopter"
 
 
 @dataclass(frozen=True)
@@ -170,14 +180,23 @@ def ensure_unarmed(summary: HeartbeatSummary) -> None:
         raise typer.Exit(1)
 
 
-def ensure_fixed_wing(summary: HeartbeatSummary) -> None:
-    """Abort the smoke test if the vehicle is not a fixed-wing aircraft."""
-    if summary.vehicle_type != mavlink.MAV_TYPE_FIXED_WING:
-        typer.echo("Smoke test expected a fixed-wing aircraft.", err=True)
+def ensure_vehicle_type(summary: HeartbeatSummary, expected_vehicle: ExpectedVehicle) -> None:
+    """Abort the smoke test if the vehicle type does not match the expectation."""
+    expected_vehicle_types = {
+        ExpectedVehicle.FIXED_WING: mavlink.MAV_TYPE_FIXED_WING,
+        ExpectedVehicle.COPTER: mavlink.MAV_TYPE_QUADROTOR,
+        ExpectedVehicle.ROVER: mavlink.MAV_TYPE_GROUND_ROVER,
+        ExpectedVehicle.HELICOPTER: mavlink.MAV_TYPE_HELICOPTER,
+    }
+
+    if summary.vehicle_type != expected_vehicle_types[expected_vehicle]:
+        typer.echo(f"Smoke test expected a {expected_vehicle} aircraft, but got a {summary.vehicle_type}.", err=True)
         raise typer.Exit(1)
 
 
-def run_smoke_test(connect: str, timeout: float, output: pathlib.Path) -> HeartbeatSummary:
+def run_smoke_test(
+    connect: str, timeout: float, output: pathlib.Path, expected_vehicle: ExpectedVehicle = ExpectedVehicle.FIXED_WING
+) -> HeartbeatSummary:
     """Execute the smoke test."""
     connection = mavutil.mavlink_connection(connect)
     start_time = time.monotonic()
@@ -197,7 +216,7 @@ def run_smoke_test(connect: str, timeout: float, output: pathlib.Path) -> Heartb
         captured_at=utc_now(),
     )
     ensure_unarmed(summary)
-    ensure_fixed_wing(summary)
+    ensure_vehicle_type(summary, expected_vehicle=expected_vehicle)
 
     artifact = create_artifact(summary)
     write_artifact(artifact, output)
@@ -230,9 +249,16 @@ def main(
             help="Path for the JSON smoke-test artifact.",
         ),
     ] = DEFAULT_OUTPUT,
+    expected_vehicle: Annotated[
+        ExpectedVehicle,
+        typer.Option(
+            "--expected-vehicle",
+            help="Vehicle type expected in the heartbeat.",
+        ),
+    ] = ExpectedVehicle.FIXED_WING,
 ) -> None:
     """Connect to SITL, observe one heartbeat, and print the safe baseline state."""
-    summary = run_smoke_test(connect, timeout, output)
+    summary = run_smoke_test(connect, timeout, output, expected_vehicle=expected_vehicle)
 
     typer.echo("connected: True")
     typer.echo(f"heartbeat_wait_s: {summary.heartbeat_wait_s}")
