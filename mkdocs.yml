@@ -98,6 +98,7 @@ nav:
   - "5. Implementation":
       - "5.1 First implementation": implementation/index.md
       - "5.2 SITL smoke test": implementation/sitl-smoke-test.md
+      - "5.3 SITL flight check": implementation/sitl-flight-check.md
   - "6. Operations":
       - "6.1 Safety, legal, and ethics": operations/safety-legal.md
       - "6.2 Test gates": operations/test-gates.md

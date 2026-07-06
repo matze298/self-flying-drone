@@ -176,7 +176,7 @@ The current script is strict by default and handles the first safety-critical se
 Add these only after the basic heartbeat smoke test remains stable:
 
 1. Keep command-sending tests separate from this smoke test until command policy and safety gates are documented.
-2. Add a dedicated command-sending SITL flight check for arming, takeoff or launch, progress observation, return, and disarm.
+2. Build the [SITL flight check](sitl-flight-check.md) for explicit command opt-in, arming, takeoff or launch, progress observation, return, and disarm.
 
 ## Done for milestone 1
 

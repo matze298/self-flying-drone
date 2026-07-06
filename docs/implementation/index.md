@@ -53,4 +53,6 @@ The first implementation is useful when a developer can:
 [ ] confirm the repo code did not arm, change mode, upload a mission, or command actuators
 ```
 
-The next implementation after this should be a replay-friendly telemetry/event log format. That keeps later vision work grounded in data we can test repeatedly.
+The next implementation after the observation-only smoke test is the [SITL flight check](sitl-flight-check.md). That second stage crosses the command boundary in simulation only: explicit opt-in, strict preflight checks, recorded commands, and a known final state.
+
+Replay-friendly telemetry and event logs should follow after the command boundary is documented. That keeps later vision work grounded in data we can test repeatedly without letting detector output command the aircraft.
