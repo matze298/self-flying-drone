@@ -333,3 +333,52 @@ def test_ensure_position_available_exits_on_missing_position(smoke_test: ModuleT
         smoke_test.ensure_position_available(summary)
 
     assert error.value.exit_code == 1
+
+
+def test_ensure_battery_available_accepts_complete_battery(smoke_test: ModuleType) -> None:
+    """Battery validation should pass when all basic battery fields are present."""
+    summary = smoke_test.HeartbeatSummary(
+        system_id=1,
+        component_id=0,
+        mode="MANUAL",
+        armed=False,
+        custom_mode=0,
+        vehicle_type=1,
+        autopilot=3,
+        heartbeat_wait_s=0.123,
+        captured_at=EXPECTED_CAPTURED_AT,
+        latitude_deg=None,
+        longitude_deg=None,
+        relative_altitude_m=None,
+        battery_voltage_v=EXPECTED_BATTERY_VOLTAGE_V,
+        battery_current_a=0,
+        battery_remaining_percent=0,
+    )
+
+    smoke_test.ensure_battery_available(summary)
+
+
+def test_ensure_battery_available_exits_on_missing_battery(smoke_test: ModuleType) -> None:
+    """Battery validation should fail when strict battery telemetry is required but missing."""
+    summary = smoke_test.HeartbeatSummary(
+        system_id=1,
+        component_id=0,
+        mode="MANUAL",
+        armed=False,
+        custom_mode=0,
+        vehicle_type=1,
+        autopilot=3,
+        heartbeat_wait_s=0.123,
+        captured_at=EXPECTED_CAPTURED_AT,
+        latitude_deg=None,
+        longitude_deg=None,
+        relative_altitude_m=None,
+        battery_voltage_v=EXPECTED_BATTERY_VOLTAGE_V,
+        battery_current_a=None,
+        battery_remaining_percent=EXPECTED_BATTERY_REMAINING_PERCENT,
+    )
+
+    with pytest.raises(typer.Exit) as error:
+        smoke_test.ensure_battery_available(summary)
+
+    assert error.value.exit_code == 1

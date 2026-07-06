@@ -140,6 +140,12 @@ Position telemetry is optional by default so a newly started simulator can still
 uv run --group sim python tools/sitl/smoke_test.py --require-position
 ```
 
+Battery telemetry is also optional by default because different SITL vehicles publish it at different points during startup. Require voltage, current, and remaining percentage once the vehicle publishes stable `BATTERY_STATUS` messages:
+
+```bash
+uv run --group sim python tools/sitl/smoke_test.py --require-battery
+```
+
 The default expected vehicle is `fixed-wing`, matching this repo's learning path:
 
 ```bash

@@ -201,6 +201,17 @@ def ensure_position_available(summary: HeartbeatSummary) -> None:
         raise typer.Exit(1)
 
 
+def ensure_battery_available(summary: HeartbeatSummary) -> None:
+    """Abort the smoke test if required battery telemetry is incomplete."""
+    if (
+        summary.battery_voltage_v is None
+        or summary.battery_current_a is None
+        or summary.battery_remaining_percent is None
+    ):
+        typer.echo("Smoke test expected battery telemetry.", err=True)
+        raise typer.Exit(1)
+
+
 def run_smoke_test(
     connect: str,
     timeout: float,
@@ -208,6 +219,7 @@ def run_smoke_test(
     expected_vehicle: ExpectedVehicle = ExpectedVehicle.FIXED_WING,
     *,
     require_position: bool = False,
+    require_battery: bool = False,
 ) -> HeartbeatSummary:
     """Execute the smoke test."""
     connection = mavutil.mavlink_connection(connect)
@@ -231,6 +243,8 @@ def run_smoke_test(
     ensure_vehicle_type(summary, expected_vehicle=expected_vehicle)
     if require_position:
         ensure_position_available(summary)
+    if require_battery:
+        ensure_battery_available(summary)
 
     artifact = create_artifact(summary)
     write_artifact(artifact, output)
@@ -278,6 +292,13 @@ def main(
             help="Fail when latitude, longitude, or relative altitude telemetry is missing.",
         ),
     ] = False,
+    require_battery: Annotated[
+        bool,
+        typer.Option(
+            "--require-battery/--no-require-battery",
+            help="Fail when voltage, current, or remaining battery telemetry is missing.",
+        ),
+    ] = False,
 ) -> None:
     """Connect to SITL, observe one heartbeat, and print the safe baseline state."""
     summary = run_smoke_test(
@@ -286,6 +307,7 @@ def main(
         output,
         expected_vehicle=expected_vehicle,
         require_position=require_position,
+        require_battery=require_battery,
     )
 
     typer.echo("connected: True")

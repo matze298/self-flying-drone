@@ -82,6 +82,8 @@ The command writes `artifacts/sitl/smoke.json`, verifies the heartbeat matches t
 
 Position telemetry remains optional by default because the first milestone should still produce a heartbeat artifact while SITL is starting. Use `--require-position` once the simulator is settled and the test should fail if latitude, longitude, or relative altitude is missing.
 
+Battery telemetry is optional for the same reason. Use `--require-battery` once SITL has published stable battery status and the test should fail if voltage, current, or remaining percentage is missing.
+
 When intentionally testing a different SITL vehicle, pass the expected type explicitly:
 
 ```bash
@@ -159,14 +161,14 @@ The current script records battery telemetry when SITL publishes it, but missing
 | Vehicle is armed | CLI exits before writing a passing result |
 | Vehicle type does not match `--expected-vehicle` | CLI exits before writing a passing result |
 | `--require-position` is set and position is incomplete | CLI exits before writing a passing result |
+| `--require-battery` is set and battery status is incomplete | CLI exits before writing a passing result |
 
 ## Future steps
 
 Add these only after the basic heartbeat smoke test remains stable:
 
-1. Add stricter opt-in requirements for battery once SITL startup timing is stable enough.
-2. Add an ArduPilot autopilot assertion if we start connecting the smoke test to non-ArduPilot MAVLink endpoints.
-3. Keep command-sending tests separate from this smoke test until command policy and safety gates are documented.
+1. Add an ArduPilot autopilot assertion if we start connecting the smoke test to non-ArduPilot MAVLink endpoints.
+2. Keep command-sending tests separate from this smoke test until command policy and safety gates are documented.
 
 ## Done for milestone 1
 
