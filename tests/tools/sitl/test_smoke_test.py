@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 import pytest
 import typer
 from pymavlink import mavutil
+from typer.testing import CliRunner
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -26,11 +27,13 @@ EXPECTED_RELATIVE_ALTITUDE_M = 12.3
 EXPECTED_BATTERY_VOLTAGE_V = 12.6
 EXPECTED_BATTERY_CURRENT_A = 1.23
 EXPECTED_BATTERY_REMAINING_PERCENT = 98
+EXPECTED_CLI_TIMEOUT = 2.0
 RAW_LATITUDE = 473977420
 RAW_LONGITUDE = 85455940
 RAW_RELATIVE_ALTITUDE = 12300
 RAW_BATTERY_VOLTAGE = 12600
 RAW_BATTERY_CURRENT = 123
+RUNNER = CliRunner()
 
 
 @pytest.fixture
@@ -178,7 +181,7 @@ def test_write_artifact_writes_sorted_pretty_json(smoke_test: ModuleType, tmp_pa
 
 
 def test_create_artifact_includes_capture_timestamp(smoke_test: ModuleType) -> None:
-    """Smoke artifacts should record when the observation was captured."""
+    """Smoke artifacts should record when the observation was captured and what was checked."""
     summary = smoke_test.HeartbeatSummary(
         system_id=1,
         component_id=0,
@@ -201,6 +204,18 @@ def test_create_artifact_includes_capture_timestamp(smoke_test: ModuleType) -> N
 
     assert artifact["captured_at"] == EXPECTED_CAPTURED_AT
     assert artifact["heartbeat"]["captured_at"] == EXPECTED_CAPTURED_AT
+    assert artifact["required_checks"] == ["unarmed", "vehicle", "ardupilot", "position", "battery"]
+
+
+def test_build_required_checks_reflects_opt_outs(smoke_test: ModuleType) -> None:
+    """Required checks should describe the checks enforced for the current run."""
+    required_checks = smoke_test.build_required_checks(
+        require_ardupilot=False,
+        require_position=False,
+        require_battery=True,
+    )
+
+    assert required_checks == ["unarmed", "vehicle", "battery"]
 
 
 def test_ensure_unarmed_exits_when_armed(smoke_test: ModuleType) -> None:
@@ -282,6 +297,59 @@ def test_ensure_vehicle_type_exits_on_unexpected_vehicle(smoke_test: ModuleType)
 
     with pytest.raises(typer.Exit) as error:
         smoke_test.ensure_vehicle_type(summary, smoke_test.ExpectedVehicle.FIXED_WING)
+
+    assert error.value.exit_code == 1
+
+
+def test_ensure_ardupilot_accepts_ardupilot_heartbeat(smoke_test: ModuleType) -> None:
+    """Autopilot validation should accept ArduPilot heartbeats."""
+    if mavutil.mavlink is None:
+        raise RuntimeError("pymavlink dialect is not loaded.")
+
+    mavlink = mavutil.mavlink
+    summary = smoke_test.HeartbeatSummary(
+        system_id=1,
+        component_id=0,
+        mode="MANUAL",
+        armed=False,
+        custom_mode=0,
+        vehicle_type=mavlink.MAV_TYPE_FIXED_WING,
+        autopilot=mavlink.MAV_AUTOPILOT_ARDUPILOTMEGA,
+        heartbeat_wait_s=0.123,
+        captured_at=EXPECTED_CAPTURED_AT,
+        latitude_deg=None,
+        longitude_deg=None,
+        relative_altitude_m=None,
+        battery_voltage_v=None,
+        battery_current_a=None,
+        battery_remaining_percent=None,
+    )
+
+    smoke_test.ensure_ardupilot(summary)
+
+
+def test_ensure_ardupilot_exits_on_unexpected_autopilot(smoke_test: ModuleType) -> None:
+    """Autopilot validation should fail when the heartbeat is not from ArduPilot."""
+    summary = smoke_test.HeartbeatSummary(
+        system_id=1,
+        component_id=0,
+        mode="MANUAL",
+        armed=False,
+        custom_mode=0,
+        vehicle_type=1,
+        autopilot=0,
+        heartbeat_wait_s=0.123,
+        captured_at=EXPECTED_CAPTURED_AT,
+        latitude_deg=None,
+        longitude_deg=None,
+        relative_altitude_m=None,
+        battery_voltage_v=None,
+        battery_current_a=None,
+        battery_remaining_percent=None,
+    )
+
+    with pytest.raises(typer.Exit) as error:
+        smoke_test.ensure_ardupilot(summary)
 
     assert error.value.exit_code == 1
 
@@ -457,3 +525,77 @@ def test_run_smoke_test_requires_battery_by_default(
         smoke_test.run_smoke_test("udp:127.0.0.1:14550", 1.0, tmp_path / "smoke.json")
 
     assert error.value.exit_code == 1
+
+
+def test_main_wires_cli_options_to_smoke_test(smoke_test: ModuleType, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The Typer CLI should pass parsed smoke-test options into the runner."""
+    captured_options: dict[str, object] = {}
+
+    def fake_run_smoke_test(
+        connect: str,
+        timeout: float,
+        output: pathlib.Path,
+        expected_vehicle: object,
+        *,
+        require_position: bool,
+        require_battery: bool,
+        require_ardupilot: bool,
+    ) -> object:
+        captured_options.update(
+            {
+                "connect": connect,
+                "timeout": timeout,
+                "output": output,
+                "expected_vehicle": expected_vehicle,
+                "require_position": require_position,
+                "require_battery": require_battery,
+                "require_ardupilot": require_ardupilot,
+            }
+        )
+        return smoke_test.HeartbeatSummary(
+            system_id=1,
+            component_id=0,
+            mode="MANUAL",
+            armed=False,
+            custom_mode=0,
+            vehicle_type=1,
+            autopilot=3,
+            heartbeat_wait_s=0.123,
+            captured_at=EXPECTED_CAPTURED_AT,
+            latitude_deg=EXPECTED_LATITUDE_DEG,
+            longitude_deg=EXPECTED_LONGITUDE_DEG,
+            relative_altitude_m=EXPECTED_RELATIVE_ALTITUDE_M,
+            battery_voltage_v=EXPECTED_BATTERY_VOLTAGE_V,
+            battery_current_a=EXPECTED_BATTERY_CURRENT_A,
+            battery_remaining_percent=EXPECTED_BATTERY_REMAINING_PERCENT,
+        )
+
+    app = typer.Typer()
+    app.command()(smoke_test.main)
+    monkeypatch.setattr(smoke_test, "run_smoke_test", fake_run_smoke_test)
+
+    result = RUNNER.invoke(
+        app,
+        [
+            "--connect",
+            "udp:127.0.0.1:14551",
+            "--timeout",
+            str(int(EXPECTED_CLI_TIMEOUT)),
+            "--output",
+            "artifacts/sitl/custom.json",
+            "--expected-vehicle",
+            "rover",
+            "--no-require-position",
+            "--no-require-battery",
+            "--no-require-ardupilot",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert captured_options["connect"] == "udp:127.0.0.1:14551"
+    assert captured_options["timeout"] == EXPECTED_CLI_TIMEOUT
+    assert captured_options["output"] == pathlib.Path("artifacts/sitl/custom.json")
+    assert captured_options["expected_vehicle"] == smoke_test.ExpectedVehicle.ROVER
+    assert captured_options["require_position"] is False
+    assert captured_options["require_battery"] is False
+    assert captured_options["require_ardupilot"] is False

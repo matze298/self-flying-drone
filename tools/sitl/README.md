@@ -132,12 +132,12 @@ uv run --group sim python tools/sitl/smoke_test.py --connect udp:127.0.0.1:14550
 cat artifacts/sitl/smoke.json
 ```
 
-The smoke test records when the observation was captured, heartbeat identity, mode, armed state, vehicle type, autopilot type, the first position sample, and battery telemetry. It exits nonzero if no heartbeat arrives, if the vehicle is armed, if the heartbeat does not describe the expected vehicle type, or if position or battery telemetry is incomplete. It writes no MAVLink commands and records `commanded_actions: []` in the artifact.
+The smoke test records when the observation was captured, heartbeat identity, mode, armed state, vehicle type, autopilot type, the first position sample, and battery telemetry. It exits nonzero if no heartbeat arrives, if the vehicle is armed, if the heartbeat does not describe the expected vehicle type, if the heartbeat is not from ArduPilot, or if position or battery telemetry is incomplete. It writes no MAVLink commands and records `commanded_actions: []` in the artifact.
 
-Position and battery telemetry are required by default because this is the boring baseline we expect to trust before building higher-level autonomy. If you are debugging early SITL startup timing, opt out explicitly:
+ArduPilot identity, position, and battery telemetry are required by default because this is the boring baseline we expect to trust before building higher-level autonomy. If you are debugging early SITL startup timing or a non-ArduPilot MAVLink endpoint, opt out explicitly:
 
 ```bash
-uv run --group sim python tools/sitl/smoke_test.py --no-require-position --no-require-battery
+uv run --group sim python tools/sitl/smoke_test.py --no-require-ardupilot --no-require-position --no-require-battery
 ```
 
 The default expected vehicle is `fixed-wing`, matching this repo's learning path:
@@ -166,6 +166,21 @@ Then run the smoke test from a second terminal with the matching MAVLink heartbe
 ```bash
 uv run --group sim python tools/sitl/smoke_test.py --expected-vehicle helicopter
 ```
+
+### Baseline complete
+
+The smoke-test baseline is complete when the default command exits successfully and `artifacts/sitl/smoke.json` shows:
+
+| Evidence | Expected result |
+|---|---|
+| `connected` | `true` |
+| `commanded_actions` | `[]` |
+| `required_checks` | Includes `unarmed`, `vehicle`, `ardupilot`, `position`, and `battery` |
+| `heartbeat.vehicle_type` | Fixed-wing by default |
+| `heartbeat.autopilot` | ArduPilot |
+| `heartbeat.armed` | `false` |
+| Position fields | Latitude, longitude, and relative altitude are present |
+| Battery fields | Voltage, current, and remaining percentage are present |
 
 ## Troubleshooting
 

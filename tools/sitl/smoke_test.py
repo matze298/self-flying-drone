@@ -19,6 +19,8 @@ if TYPE_CHECKING:
 
 DEFAULT_CONNECT = "udp:127.0.0.1:14550"
 DEFAULT_OUTPUT = pathlib.Path("artifacts/sitl/smoke.json")
+BASE_REQUIRED_CHECKS = ("unarmed", "vehicle")
+DEFAULT_REQUIRED_CHECKS = (*BASE_REQUIRED_CHECKS, "ardupilot", "position", "battery")
 
 if mavutil.mavlink is None:
     raise RuntimeError("pymavlink dialect is not loaded.")
@@ -155,16 +157,29 @@ def decode_heartbeat(
     )
 
 
-def create_artifact(summary: HeartbeatSummary) -> dict[str, object]:
+def create_artifact(summary: HeartbeatSummary, *, required_checks: list[str] | None = None) -> dict[str, object]:
     """Create the JSON-serializable smoke-test artifact."""
     return {
         "schema_version": 1,
         "source": "sitl-smoke-test",
         "connected": True,
         "commanded_actions": [],
+        "required_checks": required_checks if required_checks is not None else list(DEFAULT_REQUIRED_CHECKS),
         "captured_at": summary.captured_at,
         "heartbeat": asdict(summary),
     }
+
+
+def build_required_checks(*, require_ardupilot: bool, require_position: bool, require_battery: bool) -> list[str]:
+    """Return the checks enforced for this smoke-test run."""
+    required_checks = list(BASE_REQUIRED_CHECKS)
+    if require_ardupilot:
+        required_checks.append("ardupilot")
+    if require_position:
+        required_checks.append("position")
+    if require_battery:
+        required_checks.append("battery")
+    return required_checks
 
 
 def write_artifact(artifact: dict[str, object], output: pathlib.Path) -> None:
@@ -194,6 +209,13 @@ def ensure_vehicle_type(summary: HeartbeatSummary, expected_vehicle: ExpectedVeh
         raise typer.Exit(1)
 
 
+def ensure_ardupilot(summary: HeartbeatSummary) -> None:
+    """Abort the smoke test if the heartbeat is not from ArduPilot."""
+    if summary.autopilot != mavlink.MAV_AUTOPILOT_ARDUPILOTMEGA:
+        typer.echo(f"Smoke test expected ArduPilot autopilot, but got {summary.autopilot}.", err=True)
+        raise typer.Exit(1)
+
+
 def ensure_position_available(summary: HeartbeatSummary) -> None:
     """Abort the smoke test if required position telemetry is incomplete."""
     if summary.latitude_deg is None or summary.longitude_deg is None or summary.relative_altitude_m is None:
@@ -218,6 +240,7 @@ def run_smoke_test(
     output: pathlib.Path,
     expected_vehicle: ExpectedVehicle = ExpectedVehicle.FIXED_WING,
     *,
+    require_ardupilot: bool = True,
     require_position: bool = True,
     require_battery: bool = True,
 ) -> HeartbeatSummary:
@@ -241,12 +264,21 @@ def run_smoke_test(
     )
     ensure_unarmed(summary)
     ensure_vehicle_type(summary, expected_vehicle=expected_vehicle)
+    if require_ardupilot:
+        ensure_ardupilot(summary)
     if require_position:
         ensure_position_available(summary)
     if require_battery:
         ensure_battery_available(summary)
 
-    artifact = create_artifact(summary)
+    artifact = create_artifact(
+        summary,
+        required_checks=build_required_checks(
+            require_ardupilot=require_ardupilot,
+            require_position=require_position,
+            require_battery=require_battery,
+        ),
+    )
     write_artifact(artifact, output)
 
     return summary
@@ -299,6 +331,13 @@ def main(
             help="Fail when voltage, current, or remaining battery telemetry is missing.",
         ),
     ] = True,
+    require_ardupilot: Annotated[
+        bool,
+        typer.Option(
+            "--require-ardupilot/--no-require-ardupilot",
+            help="Fail when the heartbeat is not from ArduPilot.",
+        ),
+    ] = True,
 ) -> None:
     """Connect to SITL, observe one heartbeat, and print the safe baseline state."""
     summary = run_smoke_test(
@@ -306,6 +345,7 @@ def main(
         timeout,
         output,
         expected_vehicle=expected_vehicle,
+        require_ardupilot=require_ardupilot,
         require_position=require_position,
         require_battery=require_battery,
     )
