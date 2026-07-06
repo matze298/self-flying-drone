@@ -21,6 +21,7 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "prek>=0.4.8",
+    "pytest>=9.1.1",
     "ruff>=0.15.20",
     "ty>=0.0.56",
 ]
@@ -51,6 +52,15 @@ ignore = [
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Pytest tests use plain assert statements for readable expectations.
+]
+"tools/sitl/run.py" = [
+    "FBT002",  # Typer boolean flags are declared as bool defaults for CLI option ergonomics.
+    "PLR0913", # This CLI exposes several independent options; splitting would make help text harder to scan.
+    "S603",    # The helper intentionally launches fixed external tools: git, ArduPilot prereqs, and sim_vehicle.py.
+    "S607",    # The helper intentionally uses PATH for git so the user's configured Git install is used.
+]
 "setup.py" = [
     "B008",   # Typer option declarations are intentionally created in parameter defaults.
     "FBT001", # Typer boolean flags are declared as bool parameters by design.

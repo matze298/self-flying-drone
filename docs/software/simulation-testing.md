@@ -18,10 +18,10 @@ This installs the Python-side client tools used by this repository:
 | pymavlink | Low-level MAVLink inspection, decoding, and edge-case testing |
 | aioconsole | Convenient interactive async REPL while exploring MAVSDK calls |
 
-ArduPilot SITL itself is intentionally treated as an **external checkout**. It builds native autopilot code and uses system packages, so `uv` should not manage it. Follow ArduPilot’s Linux SITL setup, keep the checkout outside normal project history, and then run a fixed-wing simulator such as:
+ArduPilot SITL itself is intentionally treated as an **external checkout**. It builds native autopilot code and uses system packages, so `uv` should not manage it. Use the repo helper in `tools/sitl/README.md` to create or reuse the checkout and launch a fixed-wing simulator:
 
 ```bash
-sim_vehicle.py -v ArduPlane --console --map -w
+uv run tools/sitl/run.py
 ```
 
 After SITL is running, connect project tools to the simulator over MAVLink and keep the first behavior log-only.

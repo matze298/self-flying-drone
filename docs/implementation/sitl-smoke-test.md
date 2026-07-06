@@ -23,13 +23,16 @@ Expected future layout:
 
 ```text
 tools/
-└── sim/
+└── sitl/
     ├── README.md
-    └── sitl_smoke_test.py
+    ├── run.py
+    └── smoke_test.py
 
 tests/
-└── sitl/
-    └── test_sitl_smoke_contract.py
+└── tools/
+    └── sitl/
+        ├── test_run.py
+        └── test_smoke_test.py
 
 artifacts/
 └── sitl/
@@ -47,24 +50,30 @@ These paths are the first slice of the canonical layout described in [Developmen
 
 ## Local setup skeleton
 
-Install the project-side simulator client tools:
+The detailed, working local procedure lives in `tools/sitl/README.md`. The executive summary is:
 
 ```bash
 ./setup.py --workstream sim --no-shell
+uv run --group sim python -c "import mavsdk, pymavlink; print('mavlink clients ok')"
+uv run tools/sitl/run.py --setup-only
+uv run tools/sitl/run.py --install-prereqs --setup-only
+uv run tools/sitl/run.py --mavlink-out udp:127.0.0.1:14550
 ```
 
-Install and build ArduPilot SITL separately, following the upstream ArduPilot Linux setup. Keep that checkout outside this repository.
-
-Start a fixed-wing simulator:
+The default local ArduPilot checkout path is configured through `.env`:
 
 ```bash
-sim_vehicle.py -v ArduPlane --console --map -w
+ARDUPILOT_REPO=~/ws/ardupilot
 ```
 
-The future repo command should look roughly like:
+The helper defaults to `--vehicle plane` because this repository's learning path is fixed-wing first. Use another ArduPilot vehicle only when a specific experiment needs it, for example `--vehicle copter`. The explicit MAVLink output gives repo smoke-test clients a stable endpoint.
+
+When SITL launches, use the MAVProxy prompt in the launch terminal for commands. The window titled `console` is a status/log display, `ArduPlane` is the simulator window, and `Map` is the map view.
+
+The future observation-only smoke-test command should look roughly like:
 
 ```bash
-uv run python tools/sim/sitl_smoke_test.py --connect udp://127.0.0.1:14550 --duration 30
+uv run python tools/sitl/smoke_test.py --connect udp://127.0.0.1:14550 --duration 30
 ```
 
 ## Telemetry to capture first

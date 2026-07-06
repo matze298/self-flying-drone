@@ -10,3 +10,6 @@ __pycache__/
 
 # Env
 .env
+
+# Temporary test files
+tmp/
