@@ -132,18 +132,12 @@ uv run --group sim python tools/sitl/smoke_test.py --connect udp:127.0.0.1:14550
 cat artifacts/sitl/smoke.json
 ```
 
-The smoke test records when the observation was captured, heartbeat identity, mode, armed state, vehicle type, autopilot type, the first position sample when available, and battery telemetry when SITL publishes it. It exits nonzero if no heartbeat arrives, if the vehicle is armed, or if the heartbeat does not describe the expected vehicle type. It writes no MAVLink commands and records `commanded_actions: []` in the artifact.
+The smoke test records when the observation was captured, heartbeat identity, mode, armed state, vehicle type, autopilot type, the first position sample, and battery telemetry. It exits nonzero if no heartbeat arrives, if the vehicle is armed, if the heartbeat does not describe the expected vehicle type, or if position or battery telemetry is incomplete. It writes no MAVLink commands and records `commanded_actions: []` in the artifact.
 
-Position telemetry is optional by default so a newly started simulator can still produce a basic heartbeat artifact. Once SITL has settled, require the first `GLOBAL_POSITION_INT` sample explicitly:
-
-```bash
-uv run --group sim python tools/sitl/smoke_test.py --require-position
-```
-
-Battery telemetry is also optional by default because different SITL vehicles publish it at different points during startup. Require voltage, current, and remaining percentage once the vehicle publishes stable `BATTERY_STATUS` messages:
+Position and battery telemetry are required by default because this is the boring baseline we expect to trust before building higher-level autonomy. If you are debugging early SITL startup timing, opt out explicitly:
 
 ```bash
-uv run --group sim python tools/sitl/smoke_test.py --require-battery
+uv run --group sim python tools/sitl/smoke_test.py --no-require-position --no-require-battery
 ```
 
 The default expected vehicle is `fixed-wing`, matching this repo's learning path:

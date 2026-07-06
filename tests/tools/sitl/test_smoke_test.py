@@ -382,3 +382,78 @@ def test_ensure_battery_available_exits_on_missing_battery(smoke_test: ModuleTyp
         smoke_test.ensure_battery_available(summary)
 
     assert error.value.exit_code == 1
+
+
+def test_run_smoke_test_requires_position_by_default(
+    smoke_test: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: pathlib.Path,
+) -> None:
+    """The default smoke-test path should fail when position telemetry is missing."""
+    if mavutil.mavlink is None:
+        raise RuntimeError("pymavlink dialect is not loaded.")
+
+    mavlink = mavutil.mavlink
+    heartbeat = mavlink.MAVLink_heartbeat_message(
+        type=mavlink.MAV_TYPE_FIXED_WING,
+        autopilot=mavlink.MAV_AUTOPILOT_ARDUPILOTMEGA,
+        base_mode=81,
+        custom_mode=0,
+        system_status=mavlink.MAV_STATE_STANDBY,
+        mavlink_version=3,
+    )
+    connection = SimpleNamespace(
+        target_system=1,
+        target_component=0,
+        wait_heartbeat=lambda **_: heartbeat,
+        recv_match=lambda **_: None,
+    )
+    monkeypatch.setattr(smoke_test.mavutil, "mavlink_connection", lambda _: connection)
+
+    with pytest.raises(typer.Exit) as error:
+        smoke_test.run_smoke_test("udp:127.0.0.1:14550", 1.0, tmp_path / "smoke.json")
+
+    assert error.value.exit_code == 1
+
+
+def test_run_smoke_test_requires_battery_by_default(
+    smoke_test: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: pathlib.Path,
+) -> None:
+    """The default smoke-test path should fail when battery telemetry is missing."""
+    if mavutil.mavlink is None:
+        raise RuntimeError("pymavlink dialect is not loaded.")
+
+    mavlink = mavutil.mavlink
+    heartbeat = mavlink.MAVLink_heartbeat_message(
+        type=mavlink.MAV_TYPE_FIXED_WING,
+        autopilot=mavlink.MAV_AUTOPILOT_ARDUPILOTMEGA,
+        base_mode=81,
+        custom_mode=0,
+        system_status=mavlink.MAV_STATE_STANDBY,
+        mavlink_version=3,
+    )
+    connection = SimpleNamespace(
+        target_system=1,
+        target_component=0,
+        wait_heartbeat=lambda **_: heartbeat,
+        recv_match=lambda **_: None,
+    )
+    monkeypatch.setattr(smoke_test.mavutil, "mavlink_connection", lambda _: connection)
+    monkeypatch.setattr(
+        smoke_test.GlobalPosition,
+        "from_message",
+        staticmethod(
+            lambda *_args, **_kwargs: smoke_test.GlobalPosition(
+                lat=EXPECTED_LATITUDE_DEG,
+                lon=EXPECTED_LONGITUDE_DEG,
+                relative_alt=EXPECTED_RELATIVE_ALTITUDE_M,
+            ),
+        ),
+    )
+
+    with pytest.raises(typer.Exit) as error:
+        smoke_test.run_smoke_test("udp:127.0.0.1:14550", 1.0, tmp_path / "smoke.json")
+
+    assert error.value.exit_code == 1

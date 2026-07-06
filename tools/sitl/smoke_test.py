@@ -218,8 +218,8 @@ def run_smoke_test(
     output: pathlib.Path,
     expected_vehicle: ExpectedVehicle = ExpectedVehicle.FIXED_WING,
     *,
-    require_position: bool = False,
-    require_battery: bool = False,
+    require_position: bool = True,
+    require_battery: bool = True,
 ) -> HeartbeatSummary:
     """Execute the smoke test."""
     connection = mavutil.mavlink_connection(connect)
@@ -291,14 +291,14 @@ def main(
             "--require-position/--no-require-position",
             help="Fail when latitude, longitude, or relative altitude telemetry is missing.",
         ),
-    ] = False,
+    ] = True,
     require_battery: Annotated[
         bool,
         typer.Option(
             "--require-battery/--no-require-battery",
             help="Fail when voltage, current, or remaining battery telemetry is missing.",
         ),
-    ] = False,
+    ] = True,
 ) -> None:
     """Connect to SITL, observe one heartbeat, and print the safe baseline state."""
     summary = run_smoke_test(
