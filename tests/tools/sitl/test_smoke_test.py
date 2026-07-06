@@ -284,3 +284,52 @@ def test_ensure_vehicle_type_exits_on_unexpected_vehicle(smoke_test: ModuleType)
         smoke_test.ensure_vehicle_type(summary, smoke_test.ExpectedVehicle.FIXED_WING)
 
     assert error.value.exit_code == 1
+
+
+def test_ensure_position_available_accepts_complete_position(smoke_test: ModuleType) -> None:
+    """Position validation should pass when all basic position fields are present."""
+    summary = smoke_test.HeartbeatSummary(
+        system_id=1,
+        component_id=0,
+        mode="MANUAL",
+        armed=False,
+        custom_mode=0,
+        vehicle_type=1,
+        autopilot=3,
+        heartbeat_wait_s=0.123,
+        captured_at=EXPECTED_CAPTURED_AT,
+        latitude_deg=EXPECTED_LATITUDE_DEG,
+        longitude_deg=EXPECTED_LONGITUDE_DEG,
+        relative_altitude_m=EXPECTED_RELATIVE_ALTITUDE_M,
+        battery_voltage_v=None,
+        battery_current_a=None,
+        battery_remaining_percent=None,
+    )
+
+    smoke_test.ensure_position_available(summary)
+
+
+def test_ensure_position_available_exits_on_missing_position(smoke_test: ModuleType) -> None:
+    """Position validation should fail when strict position telemetry is required but missing."""
+    summary = smoke_test.HeartbeatSummary(
+        system_id=1,
+        component_id=0,
+        mode="MANUAL",
+        armed=False,
+        custom_mode=0,
+        vehicle_type=1,
+        autopilot=3,
+        heartbeat_wait_s=0.123,
+        captured_at=EXPECTED_CAPTURED_AT,
+        latitude_deg=EXPECTED_LATITUDE_DEG,
+        longitude_deg=None,
+        relative_altitude_m=EXPECTED_RELATIVE_ALTITUDE_M,
+        battery_voltage_v=None,
+        battery_current_a=None,
+        battery_remaining_percent=None,
+    )
+
+    with pytest.raises(typer.Exit) as error:
+        smoke_test.ensure_position_available(summary)
+
+    assert error.value.exit_code == 1

@@ -134,6 +134,12 @@ cat artifacts/sitl/smoke.json
 
 The smoke test records when the observation was captured, heartbeat identity, mode, armed state, vehicle type, autopilot type, the first position sample when available, and battery telemetry when SITL publishes it. It exits nonzero if no heartbeat arrives, if the vehicle is armed, or if the heartbeat does not describe the expected vehicle type. It writes no MAVLink commands and records `commanded_actions: []` in the artifact.
 
+Position telemetry is optional by default so a newly started simulator can still produce a basic heartbeat artifact. Once SITL has settled, require the first `GLOBAL_POSITION_INT` sample explicitly:
+
+```bash
+uv run --group sim python tools/sitl/smoke_test.py --require-position
+```
+
 The default expected vehicle is `fixed-wing`, matching this repo's learning path:
 
 ```bash

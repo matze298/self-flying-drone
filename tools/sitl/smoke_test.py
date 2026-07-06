@@ -194,8 +194,20 @@ def ensure_vehicle_type(summary: HeartbeatSummary, expected_vehicle: ExpectedVeh
         raise typer.Exit(1)
 
 
+def ensure_position_available(summary: HeartbeatSummary) -> None:
+    """Abort the smoke test if required position telemetry is incomplete."""
+    if summary.latitude_deg is None or summary.longitude_deg is None or summary.relative_altitude_m is None:
+        typer.echo("Smoke test expected position telemetry.", err=True)
+        raise typer.Exit(1)
+
+
 def run_smoke_test(
-    connect: str, timeout: float, output: pathlib.Path, expected_vehicle: ExpectedVehicle = ExpectedVehicle.FIXED_WING
+    connect: str,
+    timeout: float,
+    output: pathlib.Path,
+    expected_vehicle: ExpectedVehicle = ExpectedVehicle.FIXED_WING,
+    *,
+    require_position: bool = False,
 ) -> HeartbeatSummary:
     """Execute the smoke test."""
     connection = mavutil.mavlink_connection(connect)
@@ -217,6 +229,8 @@ def run_smoke_test(
     )
     ensure_unarmed(summary)
     ensure_vehicle_type(summary, expected_vehicle=expected_vehicle)
+    if require_position:
+        ensure_position_available(summary)
 
     artifact = create_artifact(summary)
     write_artifact(artifact, output)
@@ -249,6 +263,7 @@ def main(
             help="Path for the JSON smoke-test artifact.",
         ),
     ] = DEFAULT_OUTPUT,
+    *,
     expected_vehicle: Annotated[
         ExpectedVehicle,
         typer.Option(
@@ -256,9 +271,22 @@ def main(
             help="Vehicle type expected in the heartbeat.",
         ),
     ] = ExpectedVehicle.FIXED_WING,
+    require_position: Annotated[
+        bool,
+        typer.Option(
+            "--require-position/--no-require-position",
+            help="Fail when latitude, longitude, or relative altitude telemetry is missing.",
+        ),
+    ] = False,
 ) -> None:
     """Connect to SITL, observe one heartbeat, and print the safe baseline state."""
-    summary = run_smoke_test(connect, timeout, output, expected_vehicle=expected_vehicle)
+    summary = run_smoke_test(
+        connect,
+        timeout,
+        output,
+        expected_vehicle=expected_vehicle,
+        require_position=require_position,
+    )
 
     typer.echo("connected: True")
     typer.echo(f"heartbeat_wait_s: {summary.heartbeat_wait_s}")
