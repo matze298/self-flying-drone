@@ -23,9 +23,14 @@ EXPECTED_CAPTURED_AT = "2026-07-06T12:34:56Z"
 EXPECTED_LATITUDE_DEG = 47.397742
 EXPECTED_LONGITUDE_DEG = 8.545594
 EXPECTED_RELATIVE_ALTITUDE_M = 12.3
+EXPECTED_BATTERY_VOLTAGE_V = 12.6
+EXPECTED_BATTERY_CURRENT_A = 1.23
+EXPECTED_BATTERY_REMAINING_PERCENT = 98
 RAW_LATITUDE = 473977420
 RAW_LONGITUDE = 85455940
 RAW_RELATIVE_ALTITUDE = 12300
+RAW_BATTERY_VOLTAGE = 12600
+RAW_BATTERY_CURRENT = 123
 
 
 @pytest.fixture
@@ -67,10 +72,16 @@ def test_decode_heartbeat_reports_manual_unarmed(smoke_test: ModuleType) -> None
         lon=EXPECTED_LONGITUDE_DEG,
         relative_alt=EXPECTED_RELATIVE_ALTITUDE_M,
     )
+    battery_status = smoke_test.BatteryStatus(
+        voltage_v=EXPECTED_BATTERY_VOLTAGE_V,
+        current_a=EXPECTED_BATTERY_CURRENT_A,
+        remaining_percent=EXPECTED_BATTERY_REMAINING_PERCENT,
+    )
     summary = smoke_test.decode_heartbeat(
         connection,
         heartbeat,
         position=position,
+        battery_status=battery_status,
         heartbeat_wait_s=EXPECTED_HEARTBEAT_WAIT_S,
         captured_at=EXPECTED_CAPTURED_AT,
     )
@@ -86,6 +97,9 @@ def test_decode_heartbeat_reports_manual_unarmed(smoke_test: ModuleType) -> None
     assert summary.latitude_deg == EXPECTED_LATITUDE_DEG
     assert summary.longitude_deg == EXPECTED_LONGITUDE_DEG
     assert summary.relative_altitude_m == EXPECTED_RELATIVE_ALTITUDE_M
+    assert summary.battery_voltage_v == EXPECTED_BATTERY_VOLTAGE_V
+    assert summary.battery_current_a == EXPECTED_BATTERY_CURRENT_A
+    assert summary.battery_remaining_percent == EXPECTED_BATTERY_REMAINING_PERCENT
 
 
 def test_global_position_scales_message_fields(smoke_test: ModuleType) -> None:
@@ -109,6 +123,49 @@ def test_global_position_allows_missing_message(smoke_test: ModuleType) -> None:
     assert position.lat is None
     assert position.lon is None
     assert position.relative_alt is None
+
+
+def test_battery_status_scales_message_fields(smoke_test: ModuleType) -> None:
+    """BATTERY_STATUS should be scaled to volts, amps, and percent."""
+    message = SimpleNamespace(
+        voltages=[RAW_BATTERY_VOLTAGE],
+        current_battery=RAW_BATTERY_CURRENT,
+        battery_remaining=EXPECTED_BATTERY_REMAINING_PERCENT,
+    )
+    connection = SimpleNamespace(recv_match=lambda **_: message)
+
+    battery_status = smoke_test.BatteryStatus.from_message(connection)
+
+    assert battery_status.voltage_v == EXPECTED_BATTERY_VOLTAGE_V
+    assert battery_status.current_a == EXPECTED_BATTERY_CURRENT_A
+    assert battery_status.remaining_percent == EXPECTED_BATTERY_REMAINING_PERCENT
+
+
+def test_battery_status_preserves_zero_current(smoke_test: ModuleType) -> None:
+    """Zero battery current is a valid reading, not missing telemetry."""
+    message = SimpleNamespace(
+        voltages=[RAW_BATTERY_VOLTAGE],
+        current_battery=0,
+        battery_remaining=0,
+    )
+    connection = SimpleNamespace(recv_match=lambda **_: message)
+
+    battery_status = smoke_test.BatteryStatus.from_message(connection)
+
+    assert battery_status.voltage_v == EXPECTED_BATTERY_VOLTAGE_V
+    assert battery_status.current_a == 0
+    assert battery_status.remaining_percent == 0
+
+
+def test_battery_status_allows_missing_message(smoke_test: ModuleType) -> None:
+    """Missing battery telemetry should not fail the basic heartbeat smoke test."""
+    connection = SimpleNamespace(recv_match=lambda **_: None)
+
+    battery_status = smoke_test.BatteryStatus.from_message(connection)
+
+    assert battery_status.voltage_v is None
+    assert battery_status.current_a is None
+    assert battery_status.remaining_percent is None
 
 
 def test_write_artifact_writes_sorted_pretty_json(smoke_test: ModuleType, tmp_path: pathlib.Path) -> None:
@@ -135,6 +192,9 @@ def test_create_artifact_includes_capture_timestamp(smoke_test: ModuleType) -> N
         latitude_deg=None,
         longitude_deg=None,
         relative_altitude_m=None,
+        battery_voltage_v=None,
+        battery_current_a=None,
+        battery_remaining_percent=None,
     )
 
     artifact = smoke_test.create_artifact(summary)
@@ -158,6 +218,9 @@ def test_ensure_unarmed_exits_when_armed(smoke_test: ModuleType) -> None:
         latitude_deg=None,
         longitude_deg=None,
         relative_altitude_m=None,
+        battery_voltage_v=None,
+        battery_current_a=None,
+        battery_remaining_percent=None,
     )
 
     with pytest.raises(typer.Exit) as error:

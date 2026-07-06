@@ -132,7 +132,7 @@ uv run --group sim python tools/sitl/smoke_test.py --connect udp:127.0.0.1:14550
 cat artifacts/sitl/smoke.json
 ```
 
-The smoke test records when the observation was captured, heartbeat identity, mode, armed state, vehicle type, autopilot type, and the first position sample when available. It exits nonzero if no heartbeat arrives, if the vehicle is armed, or if the heartbeat does not describe a fixed-wing aircraft. It writes no MAVLink commands and records `commanded_actions: []` in the artifact.
+The smoke test records when the observation was captured, heartbeat identity, mode, armed state, vehicle type, autopilot type, the first position sample when available, and battery telemetry when SITL publishes it. It exits nonzero if no heartbeat arrives, if the vehicle is armed, or if the heartbeat does not describe a fixed-wing aircraft. It writes no MAVLink commands and records `commanded_actions: []` in the artifact.
 
 ## Troubleshooting
 

@@ -104,6 +104,9 @@ Current artifact shape:
   "heartbeat": {
     "armed": false,
     "autopilot": 3,
+    "battery_current_a": 0.0,
+    "battery_remaining_percent": 100,
+    "battery_voltage_v": 12.6,
     "captured_at": "2026-07-06T12:34:56Z",
     "component_id": 0,
     "custom_mode": 0,
@@ -137,7 +140,7 @@ Later tests can add controlled commands, but only after the command policy and s
 
 ## Current failure cases
 
-The current script handles the first safety-critical setup failures:
+The current script records battery telemetry when SITL publishes it, but missing battery data is still allowed because this milestone is an observation baseline. The current script handles the first safety-critical setup failures:
 
 | Failure | Expected behavior |
 |---|---|

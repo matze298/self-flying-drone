@@ -46,6 +46,9 @@ class HeartbeatSummary:
     latitude_deg: float | None
     longitude_deg: float | None
     relative_altitude_m: float | None
+    battery_voltage_v: float | None
+    battery_current_a: float | None
+    battery_remaining_percent: int | None
 
 
 class HeartbeatLike(Protocol):
@@ -84,11 +87,39 @@ class GlobalPosition:
         )
 
 
+@dataclass(frozen=True)
+class BatteryStatus:
+    """Decoded BATTERY_STATUS fields for the smoke test."""
+
+    voltage_v: float | None
+    current_a: float | None
+    remaining_percent: int | None
+
+    @staticmethod
+    def from_message(connection: mavserial, timeout: float = 5.0) -> BatteryStatus:
+        """Initialize BatteryStatus from a mavserial connection using BATTERY_STATUS."""
+        message = connection.recv_match(type="BATTERY_STATUS", blocking=True, timeout=timeout)
+
+        if message is None:
+            return BatteryStatus(None, None, None)
+
+        voltages = getattr(message, "voltages", None)
+        current_battery = getattr(message, "current_battery", None)
+        battery_remaining = getattr(message, "battery_remaining", None)
+
+        return BatteryStatus(
+            voltage_v=voltages[0] / 1000 if voltages and voltages[0] != 2**16 - 1 else None,
+            current_a=current_battery / 100 if current_battery is not None and current_battery != -1 else None,
+            remaining_percent=battery_remaining if battery_remaining is not None and battery_remaining != -1 else None,
+        )
+
+
 def decode_heartbeat(
     connection: mavserial,
     heartbeat: HeartbeatLike,
     *,
     position: GlobalPosition,
+    battery_status: BatteryStatus,
     captured_at: str,
     heartbeat_wait_s: float = 0,
 ) -> HeartbeatSummary:
@@ -108,6 +139,9 @@ def decode_heartbeat(
         longitude_deg=position.lon,
         relative_altitude_m=position.relative_alt,
         captured_at=captured_at,
+        battery_voltage_v=battery_status.voltage_v,
+        battery_current_a=battery_status.current_a,
+        battery_remaining_percent=battery_status.remaining_percent,
     )
 
 
@@ -158,6 +192,7 @@ def run_smoke_test(connect: str, timeout: float, output: pathlib.Path) -> Heartb
         connection,
         heartbeat,
         position=GlobalPosition.from_message(connection, timeout=timeout),
+        battery_status=BatteryStatus.from_message(connection, timeout=timeout),
         heartbeat_wait_s=heartbeat_wait_s,
         captured_at=utc_now(),
     )
