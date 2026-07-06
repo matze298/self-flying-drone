@@ -13,3 +13,6 @@ __pycache__/
 
 # Temporary test files
 tmp/
+
+# Generated smoke-test artifacts
+artifacts/

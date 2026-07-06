@@ -85,6 +85,12 @@ uv run tools/sitl/run.py --vehicle rover
 
 Use `--no-wipe` after the first successful run when you want to keep simulated parameter changes between sessions.
 
+ArduPilot rebuilds before starting by default. After the first successful build, skip that rebuild during normal repeated runs by passing `-N` through to `sim_vehicle.py`:
+
+```bash
+uv run tools/sitl/run.py --no-wipe -- -N
+```
+
 The helper also exposes a stable MAVLink output endpoint for repo smoke-test clients:
 
 ```bash
@@ -117,19 +123,16 @@ status
 
 ## Smoke test
 
-The first repo-owned validation should prove connectivity and observability without changing vehicle state. That gives us a safe baseline for later automated checks.
+The first repo-owned validation proves connectivity and observability without changing vehicle state. It gives us a safe baseline for later automated checks.
 
-The current smoke test is manual and observation-only:
-
-1. Start SITL with `uv run tools/sitl/run.py`.
-2. In the launch terminal's MAVProxy prompt, run `mode` and `status`.
-3. Confirm the vehicle remains unarmed and no repo command sends control, mode, mission, or parameter changes.
-
-The future repo-owned smoke-test command should connect to the running simulator and record heartbeat, mode, armed state, and basic telemetry:
+Start SITL first, then run the smoke test from a second terminal:
 
 ```bash
-uv run python tools/sitl/smoke_test.py --connect udp://127.0.0.1:14550 --duration 30
+uv run --group sim python tools/sitl/smoke_test.py --connect udp:127.0.0.1:14550
+cat artifacts/sitl/smoke.json
 ```
+
+The smoke test records heartbeat identity, mode, armed state, vehicle type, and autopilot type. It exits nonzero if no heartbeat arrives, if the vehicle is armed, or if the heartbeat does not describe a fixed-wing aircraft. It writes no MAVLink commands and records `commanded_actions: []` in the artifact.
 
 ## Troubleshooting
 
@@ -161,6 +164,14 @@ The helper defaults to `--wipe` for repeatable first runs. Use this after the fi
 
 ```bash
 uv run tools/sitl/run.py --no-wipe
+```
+
+### Rebuild on every launch
+
+ArduPilot's `sim_vehicle.py` rebuilds by default. That is useful while the ArduPilot checkout changes, but it is unnecessary for most repeated smoke-test runs after the first successful build. Pass `-N` through to `sim_vehicle.py` to skip rebuilding:
+
+```bash
+uv run tools/sitl/run.py --no-wipe -- -N
 ```
 
 ## Raw upstream commands

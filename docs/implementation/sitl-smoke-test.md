@@ -1,6 +1,6 @@
 # SITL smoke test
 
-This page is a skeleton for the first software-in-the-loop (SITL) implementation milestone. Keep it updated as the commands, files, and checks become real. See the [glossary](../appendix/glossary.md) for recurring abbreviations.
+This page tracks the first software-in-the-loop (SITL) implementation milestone. The basic smoke test now exists and should stay observation-only until command policy and safety gates are documented. See the [glossary](../appendix/glossary.md) for recurring abbreviations.
 
 ## Goal
 
@@ -15,11 +15,11 @@ flowchart LR
   SMOKE --> SUMMARY[Human-readable result]
 ```
 
-## Recommended implementation shape
+## Current implementation
 
-Start with a small Python command because the repo already uses `uv` and the `sim` dependency group for MAVSDK-Python and pymavlink.
+The first slice is intentionally small because the repo already uses `uv` and the `sim` dependency group for MAVLink client tooling.
 
-Expected future layout:
+Current layout:
 
 ```text
 tools/
@@ -36,17 +36,17 @@ tests/
 
 artifacts/
 └── sitl/
-    └── .gitkeep
+    └── smoke.json          # generated, not committed
 ```
 
-These paths are the first slice of the canonical layout described in [Development stack](../software/development-stack.md#monorepo-layout). The exact files can change when code exists, but keep the boundaries:
+These paths are the first slice of the canonical layout described in [Development stack](../software/development-stack.md#monorepo-layout). Keep the boundaries:
 
 | Boundary | Rule |
 |---|---|
 | SITL | External ArduPilot checkout, not vendored into this repo |
 | Repo command-line interface (CLI) | Connects to MAVLink and records observations |
 | Tests | Validate parser/output contracts without requiring SITL for every unit test |
-| Artifacts | Small examples may be committed; large logs stay out of Git |
+| Artifacts | Generated local evidence under `artifacts/`; do not commit routine smoke-test output |
 
 ## Local setup skeleton
 
@@ -68,13 +68,17 @@ ARDUPILOT_REPO=~/ws/ardupilot
 
 The helper defaults to `--vehicle plane` because this repository's learning path is fixed-wing first. Use another ArduPilot vehicle only when a specific experiment needs it, for example `--vehicle copter`. The explicit MAVLink output gives repo smoke-test clients a stable endpoint.
 
+For repeated runs after the first successful ArduPilot build, use `uv run tools/sitl/run.py --no-wipe -- -N` to preserve simulated parameters and skip ArduPilot's default rebuild.
+
 When SITL launches, use the MAVProxy prompt in the launch terminal for commands. The window titled `console` is a status/log display, `ArduPlane` is the simulator window, and `Map` is the map view.
 
-The future observation-only smoke-test command should look roughly like:
+Run the observation-only smoke test from a second terminal:
 
 ```bash
-uv run python tools/sitl/smoke_test.py --connect udp://127.0.0.1:14550 --duration 30
+uv run --group sim python tools/sitl/smoke_test.py --connect udp:127.0.0.1:14550
 ```
+
+The command writes `artifacts/sitl/smoke.json`, verifies the heartbeat is fixed-wing, verifies the vehicle is unarmed, records `commanded_actions: []`, and prints a short human-readable summary.
 
 ## Telemetry to capture first
 
@@ -90,17 +94,23 @@ Capture only enough to prove the link and support later safety checks.
 | Battery status | Needed for later low-battery failure drills |
 | Link or message timing | Shows stale-data handling can be tested |
 
-Initial artifact shape:
+Current artifact shape:
 
 ```json
 {
-  "schema_version": 1,
-  "source": "sitl-smoke-test",
-  "vehicle": "ArduPlane SITL",
+  "commanded_actions": [],
   "connected": true,
-  "armed": false,
-  "mode": "MANUAL",
-  "samples": []
+  "heartbeat": {
+    "armed": false,
+    "autopilot": 3,
+    "component_id": 0,
+    "custom_mode": 0,
+    "mode": "MANUAL",
+    "system_id": 1,
+    "vehicle_type": 1
+  },
+  "schema_version": 1,
+  "source": "sitl-smoke-test"
 }
 ```
 
@@ -119,17 +129,26 @@ The first smoke test must be observation-only.
 
 Later tests can add controlled commands, but only after the command policy and safety gates are documented.
 
-## Failure cases to document
+## Current failure cases
 
-Add each case as it is observed:
+The current script handles the first safety-critical setup failures:
 
 | Failure | Expected behavior |
 |---|---|
-| SITL not running | CLI exits with a clear connection error |
+| SITL not running | CLI exits with a clear no-heartbeat message |
 | Wrong endpoint | CLI prints the attempted endpoint and times out |
 | No heartbeat | CLI fails before subscribing to telemetry |
-| Stale telemetry | CLI marks samples stale instead of treating them as current |
-| Reconnect | CLI records reconnect events without changing vehicle state |
+| Vehicle is armed | CLI exits before writing a passing result |
+| Vehicle is not fixed-wing | CLI exits before writing a passing result |
+
+## Future steps
+
+Add these only after the basic heartbeat smoke test remains stable:
+
+1. Capture link timing and heartbeat age so stale telemetry can be detected explicitly.
+2. Add a minimal position or relative-altitude sample from `GLOBAL_POSITION_INT`.
+3. Add a `--expected-vehicle` option only if non-plane smoke tests become useful.
+4. Keep command-sending tests separate from this smoke test until command policy and safety gates are documented.
 
 ## Done for milestone 1
 
