@@ -18,6 +18,13 @@ if TYPE_CHECKING:
 
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[3]
 SMOKE_TEST_PATH = PROJECT_ROOT / "tools" / "sitl" / "smoke_test.py"
+EXPECTED_HEARTBEAT_WAIT_S = 0.123
+EXPECTED_LATITUDE_DEG = 47.397742
+EXPECTED_LONGITUDE_DEG = 8.545594
+EXPECTED_RELATIVE_ALTITUDE_M = 12.3
+RAW_LATITUDE = 473977420
+RAW_LONGITUDE = 85455940
+RAW_RELATIVE_ALTITUDE = 12300
 
 
 @pytest.fixture
@@ -54,13 +61,52 @@ def test_decode_heartbeat_reports_manual_unarmed(smoke_test: ModuleType) -> None
         mavlink_version=3,
     )
 
-    summary = smoke_test.decode_heartbeat(connection, heartbeat)
+    position = smoke_test.GlobalPosition(
+        lat=EXPECTED_LATITUDE_DEG,
+        lon=EXPECTED_LONGITUDE_DEG,
+        relative_alt=EXPECTED_RELATIVE_ALTITUDE_M,
+    )
+    summary = smoke_test.decode_heartbeat(
+        connection,
+        heartbeat,
+        position=position,
+        heartbeat_wait_s=EXPECTED_HEARTBEAT_WAIT_S,
+    )
 
     assert summary.system_id == 1
     assert summary.component_id == 0
     assert summary.mode == "MANUAL"
     assert summary.armed is False
     assert summary.custom_mode == 0
+    assert summary.vehicle_type == mavlink.MAV_TYPE_FIXED_WING
+    assert summary.autopilot == mavlink.MAV_AUTOPILOT_ARDUPILOTMEGA
+    assert summary.heartbeat_wait_s == EXPECTED_HEARTBEAT_WAIT_S
+    assert summary.latitude_deg == EXPECTED_LATITUDE_DEG
+    assert summary.longitude_deg == EXPECTED_LONGITUDE_DEG
+    assert summary.relative_altitude_m == EXPECTED_RELATIVE_ALTITUDE_M
+
+
+def test_global_position_scales_message_fields(smoke_test: ModuleType) -> None:
+    """GLOBAL_POSITION_INT should be scaled to degrees and meters."""
+    message = SimpleNamespace(lat=RAW_LATITUDE, lon=RAW_LONGITUDE, relative_alt=RAW_RELATIVE_ALTITUDE)
+    connection = SimpleNamespace(recv_match=lambda **_: message)
+
+    position = smoke_test.GlobalPosition.from_message(connection)
+
+    assert position.lat == EXPECTED_LATITUDE_DEG
+    assert position.lon == EXPECTED_LONGITUDE_DEG
+    assert position.relative_alt == EXPECTED_RELATIVE_ALTITUDE_M
+
+
+def test_global_position_allows_missing_message(smoke_test: ModuleType) -> None:
+    """Missing position telemetry should not fail the basic heartbeat smoke test."""
+    connection = SimpleNamespace(recv_match=lambda **_: None)
+
+    position = smoke_test.GlobalPosition.from_message(connection)
+
+    assert position.lat is None
+    assert position.lon is None
+    assert position.relative_alt is None
 
 
 def test_write_artifact_writes_sorted_pretty_json(smoke_test: ModuleType, tmp_path: pathlib.Path) -> None:
@@ -82,6 +128,10 @@ def test_ensure_unarmed_exits_when_armed(smoke_test: ModuleType) -> None:
         custom_mode=0,
         vehicle_type=1,
         autopilot=3,
+        heartbeat_wait_s=0.123,
+        latitude_deg=None,
+        longitude_deg=None,
+        relative_altitude_m=None,
     )
 
     with pytest.raises(typer.Exit) as error:
