@@ -60,9 +60,10 @@ Planned command sequence:
 5. Arm.
 6. Send `MAV_CMD_NAV_TAKEOFF` with the first conservative target altitude.
 7. Observe relative-altitude progress after takeoff.
-8. Record a final observed state through the same telemetry path used for preflight.
+8. Switch to Plane `RTL` mode as the first safe ending.
+9. Record a final observed state through the same telemetry path used for preflight.
 
-Return-to-launch and landing are still future work. The exact larger ArduPilot flow should be chosen while testing against live Plane SITL. Do not guess the final flight profile before the simulator proves it.
+Landing is still future work. The exact larger ArduPilot flow should be chosen while testing against live Plane SITL. Do not guess the final flight profile before the simulator proves it.
 
 ## Artifact skeleton
 
@@ -102,6 +103,11 @@ The flight-check artifact should extend the smoke-test artifact style but clearl
       "action": "observe_progress",
       "relative_altitude_gain_m": 5.7,
       "result": "accepted"
+    },
+    {
+      "action": "set_mode",
+      "requested": "RTL",
+      "result": "accepted"
     }
   ],
   "preflight": {
@@ -127,7 +133,8 @@ The flight check should fail closed.
 | Strict preflight check fails | Exit before sending commands |
 | Mode change is rejected | Stop, record the rejection, do not arm |
 | Arming is rejected | Stop, record the rejection |
-| Progress condition is not met before timeout | Command the safest documented end action available, then fail |
+| Progress condition is not met before timeout | Stop, record the rejection, and fail |
+| Return-to-launch mode is unavailable | Record the rejection and fail |
 | Final state cannot be observed | Fail before reporting a passing result |
 
 When in doubt, prefer a boring failed artifact over hiding an ambiguous state.
@@ -163,6 +170,7 @@ The artifact must show:
 | `commanded_actions` | Non-empty and ordered |
 | Mode/arm commands | Recorded with results |
 | Progress observation | Relative altitude gain is recorded after takeoff |
+| Safe ending | Return-to-launch mode command is recorded |
 | Final state | Serialized for accepted command plans, or `null` when command rejection prevents it |
 | Vision/model involvement | None |
 

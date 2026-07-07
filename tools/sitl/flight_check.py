@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 DEFAULT_OUTPUT = pathlib.Path("artifacts/sitl/flight-check.json")
 
 TAKEOFF_MODE = "TAKEOFF"
+RTL_MODE = "RTL"
 
 type CommandAction = dict[str, object]
 
@@ -153,6 +154,7 @@ def run_command_plan(
     summary: HeartbeatSummary,
     *,
     takeoff_altitude_m: float = 30,
+    end_mode: str = RTL_MODE,
     progress_required_gain_m: float = 5.0,
     progress_timeout_s: float = 20.0,
     progress_sample_timeout_s: float = 1.0,
@@ -175,15 +177,18 @@ def run_command_plan(
     if takeoff_action["result"] == "rejected":
         return actions
 
-    actions.append(
-        _observe_takeoff_progress(
-            connection,
-            baseline_relative_altitude_m=summary.relative_altitude_m,
-            required_gain_m=progress_required_gain_m,
-            timeout_s=progress_timeout_s,
-            sample_timeout_s=progress_sample_timeout_s,
-        )
+    progress_action = _observe_takeoff_progress(
+        connection,
+        baseline_relative_altitude_m=summary.relative_altitude_m,
+        required_gain_m=progress_required_gain_m,
+        timeout_s=progress_timeout_s,
+        sample_timeout_s=progress_sample_timeout_s,
     )
+    actions.append(progress_action)
+    if progress_action["result"] == "rejected":
+        return actions
+
+    actions.append(_set_mode_action(connection, end_mode))
     return actions
 
 

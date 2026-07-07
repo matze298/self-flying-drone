@@ -46,7 +46,7 @@ class FakeCommandConnection:
         progress_altitudes_m: list[float | None] | None = None,
     ) -> None:
         """Initialize a fake connection with configurable mode mapping."""
-        self.modes = modes if modes is not None else {"TAKEOFF": 13}
+        self.modes = modes if modes is not None else {"TAKEOFF": 13, "RTL": 11}
         self.mav = FakeMav(fail_takeoff=fail_takeoff)
         self.fail_arm = fail_arm
         self.progress_altitudes_m = progress_altitudes_m if progress_altitudes_m is not None else [18.0]
@@ -277,8 +277,9 @@ def test_run_command_plan_records_mode_arm_and_takeoff() -> None:
         {"action": "arm", "result": "accepted"},
         {"action": "takeoff", "altitude_m": 30, "result": "sent"},
         {"action": "observe_progress", "relative_altitude_gain_m": 5.7, "result": "accepted"},
+        {"action": "set_mode", "requested": "RTL", "result": "accepted"},
     ]
-    assert connection.calls == [("set_mode", 13), ("arm", True), ("wait_armed", True)]
+    assert connection.calls == [("set_mode", 13), ("arm", True), ("wait_armed", True), ("set_mode", 11)]
     assert len(connection.mav.command_long_calls) == 1
 
 
@@ -361,4 +362,20 @@ def test_run_command_plan_uses_configurable_takeoff_and_progress_values() -> Non
         {"action": "arm", "result": "accepted"},
         {"action": "takeoff", "altitude_m": 42.0, "result": "sent"},
         {"action": "observe_progress", "relative_altitude_gain_m": 2.7, "result": "accepted"},
+        {"action": "set_mode", "requested": "RTL", "result": "accepted"},
+    ]
+
+
+def test_run_command_plan_rejects_when_rtl_mode_is_unavailable() -> None:
+    """The command plan should fail when the safe ending mode is unavailable."""
+    connection = FakeCommandConnection(modes={"TAKEOFF": 13})
+
+    actions = flight_check.run_command_plan(cast("Any", connection), safe_summary())
+
+    assert actions == [
+        {"action": "set_mode", "requested": "TAKEOFF", "result": "accepted"},
+        {"action": "arm", "result": "accepted"},
+        {"action": "takeoff", "altitude_m": 30, "result": "sent"},
+        {"action": "observe_progress", "relative_altitude_gain_m": 5.7, "result": "accepted"},
+        {"action": "set_mode", "requested": "RTL", "result": "rejected", "reason": "mode-unavailable"},
     ]
