@@ -148,7 +148,23 @@ def test_run_flight_check_writes_expected_artifact(
     assert artifact["status"] == "ok"
     assert artifact["required_checks"].count("explicit-command-opt-in") == 1
     assert artifact["commanded_actions"] == commanded_actions
-    assert artifact["final_state"] is None
+    assert artifact["final_state"] == {
+        "armed": False,
+        "autopilot": telemetry.verified_mavlink.MAV_AUTOPILOT_ARDUPILOTMEGA,
+        "battery_current_a": 0.0,
+        "battery_remaining_percent": 100,
+        "battery_voltage_v": 12.6,
+        "captured_at": "2026-07-06T12:34:56Z",
+        "component_id": 0,
+        "custom_mode": 0,
+        "heartbeat_wait_s": 0.123,
+        "latitude_deg": 47.397742,
+        "longitude_deg": 8.545594,
+        "mode": "MANUAL",
+        "relative_altitude_m": 12.3,
+        "system_id": 1,
+        "vehicle_type": telemetry.verified_mavlink.MAV_TYPE_FIXED_WING,
+    }
 
 
 def test_run_flight_check_marks_artifact_failed_when_command_is_rejected(
@@ -183,6 +199,47 @@ def test_run_flight_check_marks_artifact_failed_when_command_is_rejected(
 
     assert artifact["status"] == "failed"
     assert artifact["commanded_actions"] == commanded_actions
+    assert artifact["final_state"] is None
+
+
+def test_run_flight_check_preserves_command_log_when_final_state_capture_fails(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: pathlib.Path,
+) -> None:
+    """Final-state failures should still write a failed artifact with the command log."""
+    commanded_actions = [
+        {"action": "set_mode", "requested": "TAKEOFF", "result": "accepted"},
+        {"action": "arm", "result": "accepted"},
+        {"action": "takeoff", "altitude_m": 30, "result": "sent"},
+    ]
+    connection = FakeCommandConnection()
+    captures = 0
+
+    def fake_capture(*_args: object, **_kwargs: object) -> telemetry.HeartbeatSummary:
+        nonlocal captures
+        captures += 1
+        if captures == 1:
+            return safe_summary()
+        raise typer.Exit(1)
+
+    monkeypatch.setattr(flight_check, "get_mav_connection", lambda _: connection)
+    monkeypatch.setattr(flight_check, "capture_preflight_summary", fake_capture)
+    monkeypatch.setattr(flight_check.preflight, "run_strict_preflight", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(flight_check, "run_command_plan", lambda *_args, **_kwargs: commanded_actions)
+
+    output = tmp_path / "flight.json"
+    flight_check.run_flight_check(
+        "udp:127.0.0.1:14550",
+        1.0,
+        output,
+        command_opt_in=True,
+    )
+
+    artifact = json.loads(output.read_text(encoding="utf-8"))
+
+    assert artifact["status"] == "failed"
+    assert artifact["commanded_actions"] == commanded_actions
+    assert artifact["final_state"] is None
 
 
 def test_run_command_plan_records_mode_arm_and_takeoff() -> None:

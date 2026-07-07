@@ -110,13 +110,22 @@ def run_flight_check(connect: str, timeout: float, output: pathlib.Path, *, comm
     preflight.run_strict_preflight(preflight_summary, expected_vehicle=ExpectedVehicle.FIXED_WING)
 
     commanded_actions = run_command_plan(connection, preflight_summary)
-    status = "failed" if any(a["result"] == "rejected" for a in commanded_actions) else "ok"
 
-    artifact: dict[str, object] = create_flight_check_artifact(
-        preflight_summary, commanded_actions=commanded_actions, status=status
+    rejected = any(a["result"] == "rejected" for a in commanded_actions)
+    status = "failed" if rejected else "ok"
+    try:
+        final_state = None if rejected else capture_preflight_summary(connection, timeout)
+    except typer.Exit:
+        final_state = None
+        status = "failed"
+
+    artifact = create_flight_check_artifact(
+        preflight_summary,
+        commanded_actions=commanded_actions,
+        status=status,
+        final_state=final_state,
     )
     write_artifact(artifact, output)
-
     return preflight_summary
 
 

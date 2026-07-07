@@ -35,6 +35,7 @@ def create_flight_check_artifact(
     status: str,
     *,
     required_checks: list[str] | None = None,
+    final_state: HeartbeatSummary | None = None,
 ) -> dict[str, object]:
     """Create the JSON-serializable flight check artifact."""
     checks = list(required_checks) if required_checks is not None else [*DEFAULT_REQUIRED_CHECKS]
@@ -50,7 +51,7 @@ def create_flight_check_artifact(
         "captured_at": preflight_summary.captured_at,
         "preflight": asdict(preflight_summary),
         "commanded_actions": commanded_actions,
-        "final_state": None,
+        "final_state": asdict(final_state) if final_state is not None else None,
     }
 
 

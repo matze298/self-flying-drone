@@ -56,14 +56,12 @@ Planned command sequence:
 1. Connect to the same stable MAVLink endpoint used by the smoke test.
 2. Run the strict baseline checks: fixed-wing ArduPilot, unarmed, position telemetry, battery telemetry.
 3. Record the preflight state in the artifact.
-4. Switch into the minimum ArduPilot mode needed for the chosen SITL flow.
+4. Switch to Plane `TAKEOFF` mode when the mode is available.
 5. Arm.
-6. Start a minimal takeoff, launch, or mission segment that works reliably in Plane SITL.
-7. Observe progress through altitude, position, mode, or mission state.
-8. Command return-to-launch, land, or another documented safe end action.
-9. Record the final observed state and write the artifact.
+6. Send `MAV_CMD_NAV_TAKEOFF` with the first conservative target altitude.
+7. Record a final observed state through the same telemetry path used for preflight.
 
-The exact ArduPilot mode and command sequence should be chosen while testing against live Plane SITL. Do not guess the final flight profile before the simulator proves it.
+Return-to-launch, landing, and progress assertions are still future work. The exact larger ArduPilot flow should be chosen while testing against live Plane SITL. Do not guess the final flight profile before the simulator proves it.
 
 ## Artifact skeleton
 
@@ -74,6 +72,8 @@ The flight-check artifact should extend the smoke-test artifact style but clearl
   "schema_version": 1,
   "source": "sitl-flight-check",
   "connected": true,
+  "status": "ok",
+  "captured_at": "2026-07-06T12:34:56Z",
   "required_checks": [
     "unarmed",
     "vehicle",
@@ -85,12 +85,17 @@ The flight-check artifact should extend the smoke-test artifact style but clearl
   "commanded_actions": [
     {
       "action": "set_mode",
-      "requested": "TBD",
+      "requested": "TAKEOFF",
       "result": "accepted"
     },
     {
       "action": "arm",
       "result": "accepted"
+    },
+    {
+      "action": "takeoff",
+      "altitude_m": 30,
+      "result": "sent"
     }
   ],
   "preflight": {
@@ -98,13 +103,13 @@ The flight-check artifact should extend the smoke-test artifact style but clearl
     "armed": false
   },
   "final_state": {
-    "mode": "TBD",
-    "armed": false
+    "mode": "TAKEOFF",
+    "armed": true
   }
 }
 ```
 
-Keep the schema small at first. Add fields only when they are useful for debugging or later automation.
+Keep the schema small at first. Add fields only when they are useful for debugging or later automation. When a command is rejected before the nominal final observation, the artifact uses `status: "failed"` and `final_state: null` while preserving the rejected command entry.
 
 ## Failure policy
 
@@ -117,7 +122,7 @@ The flight check should fail closed.
 | Mode change is rejected | Stop, record the rejection, do not arm |
 | Arming is rejected | Stop, record the rejection |
 | Progress condition is not met before timeout | Command the safest documented end action available, then fail |
-| Final state cannot be observed | Fail and keep the artifact for debugging |
+| Final state cannot be observed | Fail before reporting a passing result |
 
 When in doubt, prefer a boring failed artifact over hiding an ambiguous state.
 
@@ -131,6 +136,7 @@ Unit tests should cover contracts that do not require a running simulator:
 | Command log | Every planned command becomes an artifact entry |
 | Preflight reuse | Flight check does not bypass strict smoke-test checks |
 | Failure handling | Rejected commands produce failed artifacts |
+| Final state | Accepted command plans serialize the post-command heartbeat summary |
 | Schema | Artifact shape remains stable enough for review |
 
 Live SITL testing should remain a documented manual step until the command sequence is stable enough for continuous integration.
@@ -150,8 +156,8 @@ The artifact must show:
 | Preflight checks | Strict baseline passed before commands |
 | `commanded_actions` | Non-empty and ordered |
 | Mode/arm commands | Recorded with results |
-| Progress observation | Altitude, position, mode, or mission progress was checked |
-| Final state | Known and documented |
+| Progress observation | Altitude, position, mode, or mission progress was checked once implemented |
+| Final state | Serialized for accepted command plans, or `null` when command rejection prevents it |
 | Vision/model involvement | None |
 
 After this milestone, the next simulation work should be failure drills: reconnect behavior, low-battery action, fence action, and command rejection when preconditions are false.

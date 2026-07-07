@@ -25,14 +25,22 @@ Current layout:
 tools/
 └── sitl/
     ├── README.md
+    ├── artifacts.py
+    ├── flight_check.py
+    ├── preflight.py
     ├── run.py
-    └── smoke_test.py
+    ├── smoke_test.py
+    └── telemetry.py
 
 tests/
 └── tools/
     └── sitl/
+        ├── test_artifacts.py
+        ├── test_flight_check.py
+        ├── test_preflight.py
         ├── test_run.py
-        └── test_smoke_test.py
+        ├── test_smoke_test.py
+        └── test_telemetry.py
 
 artifacts/
 └── sitl/
