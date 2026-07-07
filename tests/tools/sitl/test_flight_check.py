@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, cast
 
 import pytest
@@ -42,11 +43,13 @@ class FakeCommandConnection:
         modes: dict[str, int] | None = None,
         fail_arm: bool = False,
         fail_takeoff: bool = False,
+        progress_altitudes_m: list[float | None] | None = None,
     ) -> None:
         """Initialize a fake connection with configurable mode mapping."""
         self.modes = modes if modes is not None else {"TAKEOFF": 13}
         self.mav = FakeMav(fail_takeoff=fail_takeoff)
         self.fail_arm = fail_arm
+        self.progress_altitudes_m = progress_altitudes_m if progress_altitudes_m is not None else [18.0]
         self.calls: list[tuple[str, object]] = []
 
     def mode_mapping(self) -> dict[str, int]:
@@ -66,6 +69,15 @@ class FakeCommandConnection:
     def motors_armed_wait(self) -> None:
         """Record that the plan waited for the armed state."""
         self.calls.append(("wait_armed", True))
+
+    def recv_match(self, **_kwargs: object) -> object | None:
+        """Return fake position telemetry for progress observation."""
+        if not self.progress_altitudes_m:
+            return None
+        altitude_m = self.progress_altitudes_m.pop(0)
+        if altitude_m is None:
+            return None
+        return SimpleNamespace(lat=473977420, lon=85455940, relative_alt=int(altitude_m * 1000))
 
 
 def safe_summary() -> telemetry.HeartbeatSummary:
@@ -264,6 +276,7 @@ def test_run_command_plan_records_mode_arm_and_takeoff() -> None:
         {"action": "set_mode", "requested": "TAKEOFF", "result": "accepted"},
         {"action": "arm", "result": "accepted"},
         {"action": "takeoff", "altitude_m": 30, "result": "sent"},
+        {"action": "observe_progress", "relative_altitude_gain_m": 5.7, "result": "accepted"},
     ]
     assert connection.calls == [("set_mode", 13), ("arm", True), ("wait_armed", True)]
     assert len(connection.mav.command_long_calls) == 1
@@ -314,3 +327,38 @@ def test_run_command_plan_records_takeoff_failure() -> None:
     ]
     assert connection.calls == [("set_mode", 13), ("arm", True), ("wait_armed", True)]
     assert connection.mav.command_long_calls == []
+
+
+def test_run_command_plan_rejects_when_progress_is_not_observed() -> None:
+    """The command plan should fail when takeoff progress is not observed."""
+    connection = FakeCommandConnection(progress_altitudes_m=[])
+
+    actions = flight_check.run_command_plan(cast("Any", connection), safe_summary(), progress_timeout_s=0.0)
+
+    assert actions == [
+        {"action": "set_mode", "requested": "TAKEOFF", "result": "accepted"},
+        {"action": "arm", "result": "accepted"},
+        {"action": "takeoff", "altitude_m": 30, "result": "sent"},
+        {"action": "observe_progress", "result": "rejected", "reason": "progress-timeout"},
+    ]
+
+
+def test_run_command_plan_uses_configurable_takeoff_and_progress_values() -> None:
+    """The command plan should allow flight-check tuning through arguments."""
+    connection = FakeCommandConnection(progress_altitudes_m=[15.0])
+
+    actions = flight_check.run_command_plan(
+        cast("Any", connection),
+        safe_summary(),
+        takeoff_altitude_m=42.0,
+        progress_required_gain_m=2.5,
+        progress_timeout_s=1.0,
+        progress_sample_timeout_s=0.1,
+    )
+
+    assert actions == [
+        {"action": "set_mode", "requested": "TAKEOFF", "result": "accepted"},
+        {"action": "arm", "result": "accepted"},
+        {"action": "takeoff", "altitude_m": 42.0, "result": "sent"},
+        {"action": "observe_progress", "relative_altitude_gain_m": 2.7, "result": "accepted"},
+    ]

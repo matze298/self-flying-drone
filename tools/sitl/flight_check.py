@@ -27,7 +27,23 @@ if TYPE_CHECKING:
 DEFAULT_OUTPUT = pathlib.Path("artifacts/sitl/flight-check.json")
 
 TAKEOFF_MODE = "TAKEOFF"
-TAKEOFF_ALTITUDE_M = 30
+
+type CommandAction = dict[str, object]
+
+
+def _accepted(action: str, **fields: object) -> CommandAction:
+    """Create an accepted command action."""
+    return {"action": action, **fields, "result": "accepted"}
+
+
+def _sent(action: str, **fields: object) -> CommandAction:
+    """Create a sent command action."""
+    return {"action": action, **fields, "result": "sent"}
+
+
+def _rejected(action: str, reason: str, **fields: object) -> CommandAction:
+    """Create a rejected command action."""
+    return {"action": action, **fields, "result": "rejected", "reason": reason}
 
 
 def ensure_command_opt_in(*, command_opt_in: bool) -> None:
@@ -58,36 +74,60 @@ def capture_preflight_summary(connection: mavfile, timeout: float) -> HeartbeatS
     )
 
 
-def run_command_plan(connection: mavfile, summary: HeartbeatSummary) -> list[dict[str, object]]:  # noqa: ARG001
-    """Runs a list of commands."""
-    actions: list[dict[str, object]] = []
+def _observe_takeoff_progress(
+    connection: mavfile,
+    *,
+    baseline_relative_altitude_m: float | None,
+    required_gain_m: float,
+    sample_timeout_s: float,
+    timeout_s: float,
+) -> CommandAction:
+    """Observe relative-altitude gain after the takeoff command."""
+    if baseline_relative_altitude_m is None:
+        return _rejected("observe_progress", "missing-baseline-altitude")
 
-    # Enter takeoff mode
+    if timeout_s <= 0:
+        return _rejected("observe_progress", "progress-timeout")
+
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() <= deadline:
+        remaining_s = max(0.0, deadline - time.monotonic())
+        sample_timeout = min(sample_timeout_s, remaining_s)
+        position = GlobalPosition.from_message(connection, timeout=sample_timeout)
+        if position.relative_alt is None:
+            continue
+
+        altitude_gain_m = round(position.relative_alt - baseline_relative_altitude_m, 3)
+        if altitude_gain_m >= required_gain_m:
+            return _accepted("observe_progress", relative_altitude_gain_m=altitude_gain_m)
+
+    return _rejected("observe_progress", "progress-timeout")
+
+
+def _set_mode_action(connection: mavfile, mode: str) -> CommandAction:
+    """Set an ArduPilot mode and record the result."""
     modes: dict[str, int | None] = connection.mode_mapping()
-    mode_id = modes.get(TAKEOFF_MODE)
+    mode_id = modes.get(mode)
     if mode_id is None:
-        return [
-            {
-                "action": "set_mode",
-                "requested": TAKEOFF_MODE,
-                "result": "rejected",
-                "reason": "mode-unavailable",
-            },
-        ]
+        return _rejected("set_mode", "mode-unavailable", requested=mode)
 
     connection.set_mode(mode_id)
-    actions.append({"action": "set_mode", "requested": TAKEOFF_MODE, "result": "accepted"})
+    return _accepted("set_mode", requested=mode)
 
-    # ARM the copters
+
+def _arm_action(connection: mavfile) -> CommandAction:
+    """Arm the vehicle and wait until ArduPilot reports motors armed."""
     try:
         connection.arducopter_arm()
         connection.motors_armed_wait()
-        actions.append({"action": "arm", "result": "accepted"})
     except:  # noqa: E722 - pymavlink command helpers can raise transport-specific exceptions.
-        actions.append({"action": "arm", "result": "rejected", "reason": "command-failed"})
-        return actions
+        return _rejected("arm", "command-failed")
 
-    # Send to MAVLINK
+    return _accepted("arm")
+
+
+def _takeoff_action(connection: mavfile, *, altitude_m: float) -> CommandAction:
+    """Send the MAVLink takeoff command and record the result."""
     try:
         connection.mav.command_long_send(
             connection.target_system,
@@ -100,15 +140,50 @@ def run_command_plan(connection: mavfile, summary: HeartbeatSummary) -> list[dic
             0,
             0,
             0,
-            TAKEOFF_ALTITUDE_M,
+            altitude_m,
         )
-        actions.append({"action": "takeoff", "altitude_m": TAKEOFF_ALTITUDE_M, "result": "sent"})
     except:  # noqa: E722 - pymavlink command helpers can raise transport-specific exceptions.
-        actions.append(
-            {"action": "takeoff", "altitude_m": TAKEOFF_ALTITUDE_M, "result": "rejected", "reason": "command-failed"}
-        )
+        return _rejected("takeoff", reason="command-failed", altitude_m=altitude_m)
+
+    return _sent("takeoff", altitude_m=altitude_m)
+
+
+def run_command_plan(
+    connection: mavfile,
+    summary: HeartbeatSummary,
+    *,
+    takeoff_altitude_m: float = 30,
+    progress_required_gain_m: float = 5.0,
+    progress_timeout_s: float = 20.0,
+    progress_sample_timeout_s: float = 1.0,
+) -> list[CommandAction]:
+    """Runs a list of commands."""
+    actions: list[CommandAction] = []
+
+    set_mode_action = _set_mode_action(connection, TAKEOFF_MODE)
+    actions.append(set_mode_action)
+    if set_mode_action["result"] == "rejected":
         return actions
 
+    arm_action = _arm_action(connection)
+    actions.append(arm_action)
+    if arm_action["result"] == "rejected":
+        return actions
+
+    takeoff_action = _takeoff_action(connection, altitude_m=takeoff_altitude_m)
+    actions.append(takeoff_action)
+    if takeoff_action["result"] == "rejected":
+        return actions
+
+    actions.append(
+        _observe_takeoff_progress(
+            connection,
+            baseline_relative_altitude_m=summary.relative_altitude_m,
+            required_gain_m=progress_required_gain_m,
+            timeout_s=progress_timeout_s,
+            sample_timeout_s=progress_sample_timeout_s,
+        )
+    )
     return actions
 
 

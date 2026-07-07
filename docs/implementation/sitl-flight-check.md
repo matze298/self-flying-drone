@@ -59,9 +59,10 @@ Planned command sequence:
 4. Switch to Plane `TAKEOFF` mode when the mode is available.
 5. Arm.
 6. Send `MAV_CMD_NAV_TAKEOFF` with the first conservative target altitude.
-7. Record a final observed state through the same telemetry path used for preflight.
+7. Observe relative-altitude progress after takeoff.
+8. Record a final observed state through the same telemetry path used for preflight.
 
-Return-to-launch, landing, and progress assertions are still future work. The exact larger ArduPilot flow should be chosen while testing against live Plane SITL. Do not guess the final flight profile before the simulator proves it.
+Return-to-launch and landing are still future work. The exact larger ArduPilot flow should be chosen while testing against live Plane SITL. Do not guess the final flight profile before the simulator proves it.
 
 ## Artifact skeleton
 
@@ -96,6 +97,11 @@ The flight-check artifact should extend the smoke-test artifact style but clearl
       "action": "takeoff",
       "altitude_m": 30,
       "result": "sent"
+    },
+    {
+      "action": "observe_progress",
+      "relative_altitude_gain_m": 5.7,
+      "result": "accepted"
     }
   ],
   "preflight": {
@@ -109,7 +115,7 @@ The flight-check artifact should extend the smoke-test artifact style but clearl
 }
 ```
 
-Keep the schema small at first. Add fields only when they are useful for debugging or later automation. When a command is rejected before the nominal final observation, the artifact uses `status: "failed"` and `final_state: null` while preserving the rejected command entry.
+Keep the schema small at first. Add fields only when they are useful for debugging or later automation. When a command is rejected before the nominal final observation, or when progress is not observed, the artifact uses `status: "failed"` and `final_state: null` while preserving the rejected command entry.
 
 ## Failure policy
 
@@ -156,7 +162,7 @@ The artifact must show:
 | Preflight checks | Strict baseline passed before commands |
 | `commanded_actions` | Non-empty and ordered |
 | Mode/arm commands | Recorded with results |
-| Progress observation | Altitude, position, mode, or mission progress was checked once implemented |
+| Progress observation | Relative altitude gain is recorded after takeoff |
 | Final state | Serialized for accepted command plans, or `null` when command rejection prevents it |
 | Vision/model involvement | None |
 
