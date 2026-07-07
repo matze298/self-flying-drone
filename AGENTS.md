@@ -11,6 +11,14 @@ This repository is a fixed-wing autonomy buyers and developers guide. Use these 
 - When opening PRs, use a draft PR unless the user asks for ready-for-review.
 - Keep PR descriptions brief and structured with `What`, `How`, `Why`, and `Experiments / Tests`.
 
+## Branch Naming
+
+- Use lowercase work branch names in the form `<type>/<short-kebab-slug>`.
+- Preferred branch types are `feature/`, `fix/`, `cleanup/`, `docs/`, `test/`, `ci/`, `deps/`, `release/`, and `spike/`.
+- Use `feature/` for new user-visible capability, `fix/` for defects, `cleanup/` for refactors or repository hygiene, and `docs/` for documentation-only changes.
+- Use `test/` for test-only work, `ci/` for GitHub Actions or hook changes, `deps/` for dependency updates, `release/` for release preparation, and `spike/` for short-lived experiments.
+- Never use `codex/` for branch names.
+
 ## Tooling Decisions
 
 - Use `uv` for Python environments, Python dependency groups, docs tooling, and local repo checks.
