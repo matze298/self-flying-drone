@@ -47,6 +47,19 @@ Required design rules:
 
 The initial CLI should refuse to run unless a flag such as `--i-understand-this-sends-commands` is present. The exact flag name can change during implementation, but the intent should not.
 
+The first command profile uses conservative defaults, but the local CLI exposes the tuning values needed for live SITL validation:
+
+```bash
+uv run --group sim python tools/sitl/flight_check.py \
+  --connect udp:127.0.0.1:14550 \
+  --i-understand-this-sends-commands \
+  --takeoff-altitude 30 \
+  --end-mode RTL \
+  --progress-gain 5 \
+  --progress-timeout 20 \
+  --progress-sample-timeout 1
+```
+
 ## Proposed scope
 
 Start with the smallest fixed-wing path that proves command authority without turning this into a full mission system.
@@ -115,13 +128,13 @@ The flight-check artifact should extend the smoke-test artifact style but clearl
     "armed": false
   },
   "final_state": {
-    "mode": "TAKEOFF",
+    "mode": "RTL",
     "armed": true
   }
 }
 ```
 
-Keep the schema small at first. Add fields only when they are useful for debugging or later automation. When a command is rejected before the nominal final observation, or when progress is not observed, the artifact uses `status: "failed"` and `final_state: null` while preserving the rejected command entry.
+Keep the schema small at first. Add fields only when they are useful for debugging or later automation. When a command is rejected before the nominal final observation, when progress is not observed, or when the final state is not the requested ending mode, the artifact uses `status: "failed"` while preserving the command log and any final state that was captured.
 
 ## Failure policy
 
@@ -135,6 +148,7 @@ The flight check should fail closed.
 | Arming is rejected | Stop, record the rejection |
 | Progress condition is not met before timeout | Stop, record the rejection, and fail |
 | Return-to-launch mode is unavailable | Record the rejection and fail |
+| Final state is not the requested ending mode | Write the captured final state but mark the artifact failed |
 | Final state cannot be observed | Fail before reporting a passing result |
 
 When in doubt, prefer a boring failed artifact over hiding an ambiguous state.
@@ -171,7 +185,7 @@ The artifact must show:
 | Mode/arm commands | Recorded with results |
 | Progress observation | Relative altitude gain is recorded after takeoff |
 | Safe ending | Return-to-launch mode command is recorded |
-| Final state | Serialized for accepted command plans, or `null` when command rejection prevents it |
+| Final state | Serialized and matching the requested ending mode |
 | Vision/model involvement | None |
 
 After this milestone, the next simulation work should be failure drills: reconnect behavior, low-battery action, fence action, and command rejection when preconditions are false.

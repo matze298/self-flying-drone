@@ -112,7 +112,11 @@ def _set_mode_action(connection: mavfile, mode: str) -> CommandAction:
     if mode_id is None:
         return _rejected("set_mode", "mode-unavailable", requested=mode)
 
-    connection.set_mode(mode_id)
+    try:
+        connection.set_mode(mode_id)
+    except:  # noqa: E722 - pymavlink command helpers can raise transport-specific exceptions.
+        return _rejected("set_mode", "command-failed", requested=mode)
+
     return _accepted("set_mode", requested=mode)
 
 
@@ -192,7 +196,23 @@ def run_command_plan(
     return actions
 
 
-def run_flight_check(connect: str, timeout: float, output: pathlib.Path, *, command_opt_in: bool) -> HeartbeatSummary:
+def final_state_matches_end_mode(final_state: HeartbeatSummary | None, *, end_mode: str) -> bool:
+    """Return whether the observed final state matches the requested end mode."""
+    return final_state is not None and final_state.mode == end_mode
+
+
+def run_flight_check(
+    connect: str,
+    timeout: float,
+    output: pathlib.Path,
+    *,
+    command_opt_in: bool,
+    takeoff_altitude_m: float = 30,
+    end_mode: str = RTL_MODE,
+    progress_required_gain_m: float = 5.0,
+    progress_timeout_s: float = 20.0,
+    progress_sample_timeout_s: float = 1.0,
+) -> HeartbeatSummary:
     """Execute the flight check."""
     ensure_command_opt_in(command_opt_in=command_opt_in)
 
@@ -200,7 +220,15 @@ def run_flight_check(connect: str, timeout: float, output: pathlib.Path, *, comm
     preflight_summary = capture_preflight_summary(connection, timeout)
     preflight.run_strict_preflight(preflight_summary, expected_vehicle=ExpectedVehicle.FIXED_WING)
 
-    commanded_actions = run_command_plan(connection, preflight_summary)
+    commanded_actions = run_command_plan(
+        connection,
+        preflight_summary,
+        takeoff_altitude_m=takeoff_altitude_m,
+        end_mode=end_mode,
+        progress_required_gain_m=progress_required_gain_m,
+        progress_timeout_s=progress_timeout_s,
+        progress_sample_timeout_s=progress_sample_timeout_s,
+    )
 
     rejected = any(a["result"] == "rejected" for a in commanded_actions)
     status = "failed" if rejected else "ok"
@@ -208,6 +236,8 @@ def run_flight_check(connect: str, timeout: float, output: pathlib.Path, *, comm
         final_state = None if rejected else capture_preflight_summary(connection, timeout)
     except typer.Exit:
         final_state = None
+        status = "failed"
+    if status == "ok" and not final_state_matches_end_mode(final_state, end_mode=end_mode):
         status = "failed"
 
     artifact = create_flight_check_artifact(
@@ -252,9 +282,58 @@ def main(
             "--i-understand-this-sends-commands/--no-i-understand-this-sends-commands",
         ),
     ] = False,
+    takeoff_altitude_m: Annotated[
+        float,
+        typer.Option(
+            "--takeoff-altitude",
+            help="Target altitude in meters for MAV_CMD_NAV_TAKEOFF.",
+            min=1.0,
+        ),
+    ] = 30,
+    end_mode: Annotated[
+        str,
+        typer.Option(
+            "--end-mode",
+            help="ArduPilot mode requested after takeoff progress is observed.",
+        ),
+    ] = RTL_MODE,
+    progress_required_gain_m: Annotated[
+        float,
+        typer.Option(
+            "--progress-gain",
+            help="Required relative-altitude gain in meters after takeoff.",
+            min=0.1,
+        ),
+    ] = 5.0,
+    progress_timeout_s: Annotated[
+        float,
+        typer.Option(
+            "--progress-timeout",
+            help="Maximum seconds to wait for takeoff progress.",
+            min=0.0,
+        ),
+    ] = 20.0,
+    progress_sample_timeout_s: Annotated[
+        float,
+        typer.Option(
+            "--progress-sample-timeout",
+            help="Seconds to wait for each progress telemetry sample.",
+            min=0.0,
+        ),
+    ] = 1.0,
 ) -> None:
     """Connect to SITL, observe one heartbeat, and print the safe baseline state."""
-    summary = run_flight_check(connect, timeout, output, command_opt_in=command_opt_in)
+    summary = run_flight_check(
+        connect,
+        timeout,
+        output,
+        command_opt_in=command_opt_in,
+        takeoff_altitude_m=takeoff_altitude_m,
+        end_mode=end_mode,
+        progress_required_gain_m=progress_required_gain_m,
+        progress_timeout_s=progress_timeout_s,
+        progress_sample_timeout_s=progress_sample_timeout_s,
+    )
 
     typer.echo("connected: True")
     typer.echo(f"heartbeat_wait_s: {summary.heartbeat_wait_s}")
