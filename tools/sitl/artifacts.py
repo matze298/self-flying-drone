@@ -29,6 +29,31 @@ def create_smoke_artifact(summary: HeartbeatSummary, *, required_checks: list[st
     }
 
 
+def create_flight_check_artifact(
+    preflight_summary: HeartbeatSummary,
+    commanded_actions: list[dict[str, object]],
+    status: str,
+    *,
+    required_checks: list[str] | None = None,
+) -> dict[str, object]:
+    """Create the JSON-serializable flight check artifact."""
+    checks = list(required_checks) if required_checks is not None else [*DEFAULT_REQUIRED_CHECKS]
+    if "explicit-command-opt-in" not in checks:
+        checks.append("explicit-command-opt-in")
+
+    return {
+        "schema_version": 1,
+        "source": "sitl-flight-check",
+        "connected": True,
+        "status": status,
+        "required_checks": checks,
+        "captured_at": preflight_summary.captured_at,
+        "preflight": asdict(preflight_summary),
+        "commanded_actions": commanded_actions,
+        "final_state": None,
+    }
+
+
 def build_required_checks(*, require_ardupilot: bool, require_position: bool, require_battery: bool) -> list[str]:
     """Return the checks enforced for this smoke-test run."""
     required_checks = list(BASE_REQUIRED_CHECKS)
