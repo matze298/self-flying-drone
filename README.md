@@ -7,29 +7,27 @@ A modular, safety-first documentation site for a fixed-wing RC aircraft with Ard
 Install `uv` first. The official install guide is at
 <https://docs.astral.sh/uv/getting-started/installation/>.
 
-Create/update the local environment and enter a shell inside `.venv`:
+Create/update the local environment:
 
 ```bash
 ./setup.py
 ```
 
-Run `exit` to return to your previous shell.
-
-For non-interactive setup, such as CI:
+Activate the environment when you want an interactive local development shell:
 
 ```bash
-./setup.py --no-shell
+source .venv/bin/activate
 ```
 
 Set up a specific development workstream without installing unrelated toolchains:
 
 ```bash
-./setup.py --workstream docs --no-shell
-./setup.py --workstream python --no-shell
-./setup.py --workstream sim --no-shell
+./setup.py --workstream docs
+./setup.py --workstream python
+./setup.py --workstream sim
 ```
 
-Available workstreams are `docs`, `python`, `sim`, `rust`, `ros`, and `jetson`. Workstreams that need a future Rust, ROS 2, or Jetson installer fail clearly until the repository contains those packages. The `sim` workstream installs Python-side MAVLink/SITL client tooling; ArduPilot SITL itself remains an external checkout with system dependencies.
+Available workstreams are `docs`, `python`, `sim`, `rust`, `ros`, and `jetson`. Workstreams that need a future Rust, ROS 2, or Jetson installer fail clearly until the repository contains those packages. The `sim` workstream installs Python-side MAVLink/software-in-the-loop (SITL) client tooling; ArduPilot SITL itself remains an external checkout with system dependencies.
 
 Serve the documentation site:
 
@@ -39,14 +37,14 @@ uv run --group docs mkdocs serve
 
 Open `http://127.0.0.1:8000`.
 
-## SITL smoke test
+## Software-in-the-loop (SITL) smoke test
 
 The cheapest useful software entry point is ArduPilot Plane SITL. It proves this repo can observe a virtual fixed-wing aircraft over MAVLink before any hardware is required.
 
 Set up the repo-side simulator tools:
 
 ```bash
-./setup.py --workstream sim --no-shell
+./setup.py --workstream sim
 ```
 
 Create or reuse the external ArduPilot checkout and install upstream prerequisites when needed:
@@ -81,6 +79,12 @@ Run formatting, linting, and type checks:
 
 ```bash
 uv run --group dev prek run --all-files
+```
+
+Run unit tests:
+
+```bash
+uv run --group dev --group sim pytest
 ```
 
 Install the Git hooks locally:

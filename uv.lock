@@ -116,10 +116,7 @@ wheels = [
 [[package]]
 name = "drone-build"
 version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "typer" },
-]
+source = { virtual = "." }
 
 [package.dev-dependencies]
 dev = [
@@ -137,10 +134,10 @@ sim = [
     { name = "mavsdk" },
     { name = "orjson" },
     { name = "pymavlink" },
+    { name = "typer" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "typer", specifier = ">=0.20.0" }]
 
 [package.metadata.requires-dev]
 dev = [
@@ -158,6 +155,7 @@ sim = [
     { name = "mavsdk", specifier = ">=3.15.3" },
     { name = "orjson", specifier = ">=3.11.9" },
     { name = "pymavlink", specifier = ">=2.4.49" },
+    { name = "typer", specifier = ">=0.20.0" },
 ]
 
 [[package]]

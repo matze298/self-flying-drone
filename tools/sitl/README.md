@@ -1,4 +1,4 @@
-# SITL
+# Software-in-the-loop (SITL)
 
 This is the minimal local setup for running ArduPilot Plane in software-in-the-loop (SITL). It follows the upstream ArduPilot Linux setup and keeps the ArduPilot checkout outside this repository.
 
@@ -26,7 +26,7 @@ The helper also accepts `--ardupilot-repo PATH` when you want to override `.env`
 From this repository:
 
 ```bash
-./setup.py --workstream sim --no-shell
+./setup.py --workstream sim
 uv run --group sim python -c "import mavsdk, pymavlink; print('mavlink clients ok')"
 ```
 
@@ -200,7 +200,7 @@ Expected output is usually under `/usr/lib/python3/dist-packages/pexpect/`.
 
 ### `VIRTUAL_ENV` warning from uv
 
-When running `./setup.py --workstream sim --no-shell`, uv may warn that a temporary script environment does not match `.venv`. This is expected for the self-executable setup script as long as the command finishes and prints `Simulation Python tools are installed.`
+When running `./setup.py --workstream sim`, uv may warn that a temporary script environment does not match `.venv`. This is expected for the self-executable setup script as long as the command finishes and prints `Simulation Python tools are installed.`
 
 ### Prompt hidden by log output
 

@@ -13,7 +13,7 @@ flowchart LR
   M6 --> M7[7. Bounded response<br/>prevalidated loiter/camera action]
 ```
 
-Use the [Learning path](learning-path.md) as the chapter-by-chapter reading order. The first implementation target is the [SITL smoke test](../implementation/sitl-smoke-test.md), which turns milestone M1 into a small repo-owned workflow before any aircraft hardware is required.
+Use the [Learning path](learning-path.md) as the chapter-by-chapter reading order. The first implementation target is the [software-in-the-loop (SITL) smoke test](../implementation/sitl-smoke-test.md), which turns milestone M1 into a small repo-owned workflow before any aircraft hardware is required.
 
 ## Stop/go criteria
 

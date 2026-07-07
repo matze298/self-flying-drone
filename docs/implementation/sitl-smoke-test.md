@@ -1,4 +1,4 @@
-# SITL smoke test
+# Software-in-the-loop (SITL) smoke test
 
 This page tracks the first software-in-the-loop (SITL) implementation milestone. The basic smoke test now exists and should stay observation-only until command policy and safety gates are documented. See the [glossary](../appendix/glossary.md) for recurring abbreviations.
 
@@ -53,7 +53,7 @@ These paths are the first slice of the canonical layout described in [Developmen
 The detailed, working local procedure lives in `tools/sitl/README.md`. The executive summary is:
 
 ```bash
-./setup.py --workstream sim --no-shell
+./setup.py --workstream sim
 uv run --group sim python -c "import mavsdk, pymavlink; print('mavlink clients ok')"
 uv run tools/sitl/run.py --setup-only
 uv run tools/sitl/run.py --install-prereqs --setup-only

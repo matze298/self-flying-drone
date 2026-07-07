@@ -35,7 +35,7 @@ Keep the monorepo, but split build roots by toolchain:
 
 ```text
 docs/                  # MkDocs handbook
-src/                   # Python package and docs helper code
+src/                   # Future real Python packages once stable APIs exist
 tools/python/          # Future Python CLIs and replay utilities
 tools/sitl/            # ArduPilot SITL checkout/run helpers
 services/rust/         # Future Cargo workspace for standalone services
@@ -54,9 +54,9 @@ Treat this as the canonical target layout. Individual implementation pages may i
 
 | Need | Setup path |
 |---|---|
-| Read or edit docs | `./setup.py --workstream docs --no-shell` |
-| Work on Python checks and tooling | `./setup.py --workstream python --no-shell` |
-| Work with virtual aircraft and MAVLink clients | `./setup.py --workstream sim --no-shell` |
+| Read or edit docs | `./setup.py --workstream docs` |
+| Work on Python checks and tooling | `./setup.py --workstream python` |
+| Work with virtual aircraft and MAVLink clients | `./setup.py --workstream sim` |
 | Work on ground-side vision | Use `sim` now for MAVLink; add a future `vision`/`ground` group when the first CLI exists |
 | Work on Rust services | Future Cargo/rustup setup; currently intentionally not implemented |
 | Work on ROS/C++ packages | Future ROS 2 Jazzy and `colcon` setup; currently intentionally not implemented |
