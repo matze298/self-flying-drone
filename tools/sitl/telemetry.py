@@ -10,14 +10,19 @@ from typing import TYPE_CHECKING, Protocol
 from pymavlink import mavutil
 
 if TYPE_CHECKING:
-    from pymavlink.mavutil import mavserial
+    from pymavlink.mavutil import mavfile
 
 DEFAULT_CONNECT = "udp:127.0.0.1:14550"
 
 if mavutil.mavlink is None:
     raise RuntimeError("pymavlink dialect is not loaded.")
 
-mavlink = mavutil.mavlink
+verified_mavlink = mavutil.mavlink
+
+
+def get_mav_connection(connect: str) -> mavfile:
+    """Return the mavlink_connection."""
+    return mavutil.mavlink_connection(connect)
 
 
 def utc_now() -> str:
@@ -64,13 +69,6 @@ class HeartbeatLike(Protocol):
     autopilot: int
 
 
-class HeartbeatConnectionLike(Protocol):
-    """MAVLink connection fields used while decoding a heartbeat."""
-
-    target_system: int
-    target_component: int
-
-
 @dataclass
 class GlobalPosition:
     """Scale GLOBAL_POSITION_INT fields into human units."""
@@ -80,7 +78,7 @@ class GlobalPosition:
     relative_alt: float | None
 
     @staticmethod
-    def from_message(connection: mavserial, timeout: float = 5.0) -> GlobalPosition:
+    def from_message(connection: mavfile, timeout: float = 5.0) -> GlobalPosition:
         """Initialize GlobalPosition from a mavserial connection using GLOBAL_POSITION_INT."""
         message = connection.recv_match(type="GLOBAL_POSITION_INT", blocking=True, timeout=timeout)
 
@@ -107,7 +105,7 @@ class BatteryStatus:
     remaining_percent: int | None
 
     @staticmethod
-    def from_message(connection: mavserial, timeout: float = 5.0) -> BatteryStatus:
+    def from_message(connection: mavfile, timeout: float = 5.0) -> BatteryStatus:
         """Initialize BatteryStatus from a mavserial connection using BATTERY_STATUS."""
         message = connection.recv_match(type="BATTERY_STATUS", blocking=True, timeout=timeout)
 
@@ -126,7 +124,7 @@ class BatteryStatus:
 
 
 def decode_heartbeat(
-    connection: HeartbeatConnectionLike,
+    connection: mavfile,
     heartbeat: HeartbeatLike,
     *,
     position: GlobalPosition,
@@ -135,7 +133,7 @@ def decode_heartbeat(
     heartbeat_wait_s: float = 0,
 ) -> HeartbeatSummary:
     """Decode the heartbeat fields we care about without sending commands."""
-    armed = bool(heartbeat.base_mode & mavlink.MAV_MODE_FLAG_SAFETY_ARMED)
+    armed = bool(heartbeat.base_mode & verified_mavlink.MAV_MODE_FLAG_SAFETY_ARMED)
     mode = mavutil.mode_string_v10(heartbeat)
     return HeartbeatSummary(
         system_id=connection.target_system,

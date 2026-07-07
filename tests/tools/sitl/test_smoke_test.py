@@ -73,7 +73,7 @@ def test_run_smoke_test_requires_position_by_default(
         wait_heartbeat=lambda **_: heartbeat,
         recv_match=lambda **_: None,
     )
-    monkeypatch.setattr(smoke_test.mavutil, "mavlink_connection", lambda _: connection)
+    monkeypatch.setattr(smoke_test, "get_mav_connection", lambda _: connection)
 
     with pytest.raises(typer.Exit) as error:
         smoke_test.run_smoke_test("udp:127.0.0.1:14550", 1.0, tmp_path / "smoke.json")
@@ -105,7 +105,7 @@ def test_run_smoke_test_requires_battery_by_default(
         wait_heartbeat=lambda **_: heartbeat,
         recv_match=lambda **_: None,
     )
-    monkeypatch.setattr(smoke_test.mavutil, "mavlink_connection", lambda _: connection)
+    monkeypatch.setattr(smoke_test, "get_mav_connection", lambda _: connection)
     monkeypatch.setattr(
         smoke_test.GlobalPosition,
         "from_message",

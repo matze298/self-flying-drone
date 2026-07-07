@@ -3,10 +3,9 @@
 
 import pathlib
 import time
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import typer
-from pymavlink import mavutil
 
 from tools.sitl import preflight
 from tools.sitl.artifacts import create_flight_check_artifact, write_artifact
@@ -17,10 +16,18 @@ from tools.sitl.telemetry import (
     GlobalPosition,
     HeartbeatSummary,
     decode_heartbeat,
+    get_mav_connection,
     utc_now,
+    verified_mavlink,
 )
 
+if TYPE_CHECKING:
+    from pymavlink.mavutil import mavfile
+
 DEFAULT_OUTPUT = pathlib.Path("artifacts/sitl/flight-check.json")
+
+TAKEOFF_MODE = "TAKEOFF"
+TAKEOFF_ALTITUDE_M = 30
 
 
 def ensure_command_opt_in(*, command_opt_in: bool) -> None:
@@ -30,14 +37,13 @@ def ensure_command_opt_in(*, command_opt_in: bool) -> None:
         raise typer.Exit(1)
 
 
-def capture_preflight_summary(connect: str, timeout: float) -> HeartbeatSummary:
+def capture_preflight_summary(connection: mavfile, timeout: float) -> HeartbeatSummary:
     """Capture the pre-flight summary."""
-    connection = mavutil.mavlink_connection(connect)
     start_time = time.monotonic()
     heartbeat = connection.wait_heartbeat(timeout=timeout)
 
     if heartbeat is None:
-        typer.echo(f"No heartbeat received from {connect} within {timeout:g}s.", err=True)
+        typer.echo(f"No heartbeat received from {connection} within {timeout:g}s.", err=True)
         raise typer.Exit(1)
 
     heartbeat_wait_s = round(time.monotonic() - start_time, 3)
@@ -52,20 +58,62 @@ def capture_preflight_summary(connect: str, timeout: float) -> HeartbeatSummary:
     )
 
 
-def run_command_plan(connection: object, summary: HeartbeatSummary) -> list[dict[str, object]]:  # noqa: ARG001
+def run_command_plan(connection: mavfile, summary: HeartbeatSummary) -> list[dict[str, object]]:  # noqa: ARG001
     """Runs a list of commands."""
-    return []
+    actions: list[dict[str, object]] = []
+
+    # Enter takeoff mode
+    modes: dict[str, int | None] = connection.mode_mapping()
+    mode_id = modes.get(TAKEOFF_MODE)
+    if mode_id is None:
+        return [
+            {
+                "action": "set_mode",
+                "requested": TAKEOFF_MODE,
+                "result": "rejected",
+                "reason": "mode-unavailable",
+            },
+        ]
+
+    connection.set_mode(mode_id)
+    actions.append({"action": "set_mode", "requested": TAKEOFF_MODE, "result": "accepted"})
+
+    # ARM the copters
+    connection.arducopter_arm()
+    connection.motors_armed_wait()
+    actions.append({"action": "arm", "result": "accepted"})
+
+    # Send to MAVLINK
+    connection.mav.command_long_send(
+        connection.target_system,
+        connection.target_component,
+        verified_mavlink.MAV_CMD_NAV_TAKEOFF,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        TAKEOFF_ALTITUDE_M,
+    )
+    actions.append({"action": "takeoff", "altitude_m": TAKEOFF_ALTITUDE_M, "result": "sent"})
+    return actions
 
 
 def run_flight_check(connect: str, timeout: float, output: pathlib.Path, *, command_opt_in: bool) -> HeartbeatSummary:
     """Execute the flight check."""
     ensure_command_opt_in(command_opt_in=command_opt_in)
-    preflight_summary = capture_preflight_summary(connect, timeout)
+
+    connection = get_mav_connection(connect)
+    preflight_summary = capture_preflight_summary(connection, timeout)
     preflight.run_strict_preflight(preflight_summary, expected_vehicle=ExpectedVehicle.FIXED_WING)
-    commanded_actions = run_command_plan(None, preflight_summary)
+
+    commanded_actions = run_command_plan(connection, preflight_summary)
+    status = "failed" if any(a["result"] == "rejected" for a in commanded_actions) else "ok"
 
     artifact: dict[str, object] = create_flight_check_artifact(
-        preflight_summary, commanded_actions=commanded_actions, status="ok"
+        preflight_summary, commanded_actions=commanded_actions, status=status
     )
     write_artifact(artifact, output)
 

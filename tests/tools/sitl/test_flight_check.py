@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 import typer
@@ -13,6 +13,47 @@ from tools.sitl import flight_check, telemetry
 
 if TYPE_CHECKING:
     import pathlib
+
+
+class FakeMav:
+    """Capture MAVLink command calls without requiring a simulator."""
+
+    def __init__(self) -> None:
+        """Initialize an empty MAVLink command call log."""
+        self.command_long_calls: list[tuple[object, ...]] = []
+
+    def command_long_send(self, *args: object) -> None:
+        """Record command_long_send arguments."""
+        self.command_long_calls.append(args)
+
+
+class FakeCommandConnection:
+    """Small fake for the command-plan boundary."""
+
+    target_system = 1
+    target_component = 1
+
+    def __init__(self, *, modes: dict[str, int] | None = None) -> None:
+        """Initialize a fake connection with configurable mode mapping."""
+        self.modes = modes if modes is not None else {"TAKEOFF": 13}
+        self.mav = FakeMav()
+        self.calls: list[tuple[str, object]] = []
+
+    def mode_mapping(self) -> dict[str, int]:
+        """Return available ArduPilot mode names."""
+        return self.modes
+
+    def set_mode(self, mode_id: int) -> None:
+        """Record mode changes."""
+        self.calls.append(("set_mode", mode_id))
+
+    def arducopter_arm(self) -> None:
+        """Record the generic pymavlink arm command."""
+        self.calls.append(("arm", True))
+
+    def motors_armed_wait(self) -> None:
+        """Record that the plan waited for the armed state."""
+        self.calls.append(("wait_armed", True))
 
 
 def safe_summary() -> telemetry.HeartbeatSummary:
@@ -58,7 +99,9 @@ def test_run_flight_check_runs_preflight_before_commands(
 ) -> None:
     """Strict preflight should run before any command plan execution."""
     events: list[str] = []
+    connection = FakeCommandConnection()
 
+    monkeypatch.setattr(flight_check, "get_mav_connection", lambda _: connection)
     monkeypatch.setattr(flight_check, "capture_preflight_summary", lambda *_args, **_kwargs: safe_summary())
     monkeypatch.setattr(
         flight_check.preflight, "run_strict_preflight", lambda *_args, **_kwargs: events.append("preflight")
@@ -84,7 +127,9 @@ def test_run_flight_check_writes_expected_artifact(
         {"action": "set_mode", "requested": "FBWA", "result": "accepted"},
         {"action": "arm", "result": "accepted"},
     ]
+    connection = FakeCommandConnection()
 
+    monkeypatch.setattr(flight_check, "get_mav_connection", lambda _: connection)
     monkeypatch.setattr(flight_check, "capture_preflight_summary", lambda *_args, **_kwargs: safe_summary())
     monkeypatch.setattr(flight_check.preflight, "run_strict_preflight", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(flight_check, "run_command_plan", lambda *_args, **_kwargs: commanded_actions)
@@ -100,6 +145,74 @@ def test_run_flight_check_writes_expected_artifact(
     artifact = json.loads(output.read_text(encoding="utf-8"))
 
     assert artifact["source"] == "sitl-flight-check"
+    assert artifact["status"] == "ok"
     assert artifact["required_checks"].count("explicit-command-opt-in") == 1
     assert artifact["commanded_actions"] == commanded_actions
     assert artifact["final_state"] is None
+
+
+def test_run_flight_check_marks_artifact_failed_when_command_is_rejected(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: pathlib.Path,
+) -> None:
+    """Rejected command actions should be visible in the flight-check status."""
+    commanded_actions = [
+        {
+            "action": "set_mode",
+            "requested": "TAKEOFF",
+            "result": "rejected",
+            "reason": "mode-unavailable",
+        },
+    ]
+    connection = FakeCommandConnection(modes={})
+
+    monkeypatch.setattr(flight_check, "get_mav_connection", lambda _: connection)
+    monkeypatch.setattr(flight_check, "capture_preflight_summary", lambda *_args, **_kwargs: safe_summary())
+    monkeypatch.setattr(flight_check.preflight, "run_strict_preflight", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(flight_check, "run_command_plan", lambda *_args, **_kwargs: commanded_actions)
+
+    output = tmp_path / "flight.json"
+    flight_check.run_flight_check(
+        "udp:127.0.0.1:14550",
+        1.0,
+        output,
+        command_opt_in=True,
+    )
+
+    artifact = json.loads(output.read_text(encoding="utf-8"))
+
+    assert artifact["status"] == "failed"
+    assert artifact["commanded_actions"] == commanded_actions
+
+
+def test_run_command_plan_records_mode_arm_and_takeoff() -> None:
+    """The first command plan should record the virtual flight sequence."""
+    connection = FakeCommandConnection()
+
+    actions = flight_check.run_command_plan(cast("Any", connection), safe_summary())
+
+    assert actions == [
+        {"action": "set_mode", "requested": "TAKEOFF", "result": "accepted"},
+        {"action": "arm", "result": "accepted"},
+        {"action": "takeoff", "altitude_m": 30, "result": "sent"},
+    ]
+    assert connection.calls == [("set_mode", 13), ("arm", True), ("wait_armed", True)]
+    assert len(connection.mav.command_long_calls) == 1
+
+
+def test_run_command_plan_stops_after_unavailable_mode() -> None:
+    """The command plan should fail closed when the selected Plane mode is unavailable."""
+    connection = FakeCommandConnection(modes={})
+
+    actions = flight_check.run_command_plan(cast("Any", connection), safe_summary())
+
+    assert actions == [
+        {
+            "action": "set_mode",
+            "requested": "TAKEOFF",
+            "result": "rejected",
+            "reason": "mode-unavailable",
+        },
+    ]
+    assert connection.calls == []
+    assert connection.mav.command_long_calls == []

@@ -8,7 +8,6 @@ import time
 from typing import Annotated
 
 import typer
-from pymavlink import mavutil
 
 from tools.sitl.artifacts import (
     DEFAULT_OUTPUT,
@@ -30,6 +29,7 @@ from tools.sitl.telemetry import (
     GlobalPosition,
     HeartbeatSummary,
     decode_heartbeat,
+    get_mav_connection,
     utc_now,
 )
 
@@ -48,7 +48,7 @@ def run_smoke_test(
     require_battery: bool = True,
 ) -> HeartbeatSummary:
     """Execute the smoke test."""
-    connection = mavutil.mavlink_connection(connect)
+    connection = get_mav_connection(connect)
     start_time = time.monotonic()
     heartbeat = connection.wait_heartbeat(timeout=timeout)
 

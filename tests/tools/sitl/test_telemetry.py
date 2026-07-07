@@ -41,7 +41,7 @@ def test_decode_heartbeat_reports_manual_unarmed() -> None:
     )
 
     summary = telemetry.decode_heartbeat(
-        connection,
+        cast("Any", connection),
         heartbeat,
         position=telemetry.GlobalPosition(
             lat=EXPECTED_LATITUDE_DEG,
