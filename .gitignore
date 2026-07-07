@@ -16,3 +16,6 @@ tmp/
 
 # Generated smoke-test artifacts
 artifacts/
+
+# Local agent planning files
+docs/superpowers/

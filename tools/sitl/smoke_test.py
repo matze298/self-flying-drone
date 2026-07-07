@@ -3,15 +3,26 @@
 
 from __future__ import annotations
 
-import pathlib
+import pathlib  # noqa: TC003 - required by typer
 import time
-from dataclasses import asdict
 from typing import Annotated
 
-import orjson
 import typer
 from pymavlink import mavutil
 
+from tools.sitl.artifacts import (
+    DEFAULT_OUTPUT,
+    build_required_checks,
+    create_smoke_artifact,
+    write_artifact,
+)
+from tools.sitl.preflight import (
+    ensure_ardupilot,
+    ensure_battery_available,
+    ensure_position_available,
+    ensure_unarmed,
+    ensure_vehicle_type,
+)
 from tools.sitl.telemetry import (
     DEFAULT_CONNECT,
     BatteryStatus,
@@ -22,91 +33,8 @@ from tools.sitl.telemetry import (
     utc_now,
 )
 
-DEFAULT_OUTPUT = pathlib.Path("artifacts/sitl/smoke.json")
 BASE_REQUIRED_CHECKS = ("unarmed", "vehicle")
 DEFAULT_REQUIRED_CHECKS = (*BASE_REQUIRED_CHECKS, "ardupilot", "position", "battery")
-
-if mavutil.mavlink is None:
-    raise RuntimeError("pymavlink dialect is not loaded.")
-
-mavlink = mavutil.mavlink
-
-
-def create_artifact(summary: HeartbeatSummary, *, required_checks: list[str] | None = None) -> dict[str, object]:
-    """Create the JSON-serializable smoke-test artifact."""
-    return {
-        "schema_version": 1,
-        "source": "sitl-smoke-test",
-        "connected": True,
-        "commanded_actions": [],
-        "required_checks": required_checks if required_checks is not None else list(DEFAULT_REQUIRED_CHECKS),
-        "captured_at": summary.captured_at,
-        "heartbeat": asdict(summary),
-    }
-
-
-def build_required_checks(*, require_ardupilot: bool, require_position: bool, require_battery: bool) -> list[str]:
-    """Return the checks enforced for this smoke-test run."""
-    required_checks = list(BASE_REQUIRED_CHECKS)
-    if require_ardupilot:
-        required_checks.append("ardupilot")
-    if require_position:
-        required_checks.append("position")
-    if require_battery:
-        required_checks.append("battery")
-    return required_checks
-
-
-def write_artifact(artifact: dict[str, object], output: pathlib.Path) -> None:
-    """Write the smoke-test artifact as pretty JSON."""
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_bytes(orjson.dumps(artifact, option=orjson.OPT_INDENT_2 | orjson.OPT_SORT_KEYS) + b"\n")
-
-
-def ensure_unarmed(summary: HeartbeatSummary) -> None:
-    """Abort the smoke test if the vehicle starts armed."""
-    if summary.armed:
-        typer.echo("Smoke test expected the vehicle to start unarmed.", err=True)
-        raise typer.Exit(1)
-
-
-def ensure_vehicle_type(summary: HeartbeatSummary, expected_vehicle: ExpectedVehicle) -> None:
-    """Abort the smoke test if the vehicle type does not match the expectation."""
-    expected_vehicle_types = {
-        ExpectedVehicle.FIXED_WING: mavlink.MAV_TYPE_FIXED_WING,
-        ExpectedVehicle.COPTER: mavlink.MAV_TYPE_QUADROTOR,
-        ExpectedVehicle.ROVER: mavlink.MAV_TYPE_GROUND_ROVER,
-        ExpectedVehicle.HELICOPTER: mavlink.MAV_TYPE_HELICOPTER,
-    }
-
-    if summary.vehicle_type != expected_vehicle_types[expected_vehicle]:
-        typer.echo(f"Smoke test expected a {expected_vehicle} aircraft, but got a {summary.vehicle_type}.", err=True)
-        raise typer.Exit(1)
-
-
-def ensure_ardupilot(summary: HeartbeatSummary) -> None:
-    """Abort the smoke test if the heartbeat is not from ArduPilot."""
-    if summary.autopilot != mavlink.MAV_AUTOPILOT_ARDUPILOTMEGA:
-        typer.echo(f"Smoke test expected ArduPilot autopilot, but got {summary.autopilot}.", err=True)
-        raise typer.Exit(1)
-
-
-def ensure_position_available(summary: HeartbeatSummary) -> None:
-    """Abort the smoke test if required position telemetry is incomplete."""
-    if summary.latitude_deg is None or summary.longitude_deg is None or summary.relative_altitude_m is None:
-        typer.echo("Smoke test expected position telemetry.", err=True)
-        raise typer.Exit(1)
-
-
-def ensure_battery_available(summary: HeartbeatSummary) -> None:
-    """Abort the smoke test if required battery telemetry is incomplete."""
-    if (
-        summary.battery_voltage_v is None
-        or summary.battery_current_a is None
-        or summary.battery_remaining_percent is None
-    ):
-        typer.echo("Smoke test expected battery telemetry.", err=True)
-        raise typer.Exit(1)
 
 
 def run_smoke_test(
@@ -146,7 +74,7 @@ def run_smoke_test(
     if require_battery:
         ensure_battery_available(summary)
 
-    artifact = create_artifact(
+    artifact = create_smoke_artifact(
         summary,
         required_checks=build_required_checks(
             require_ardupilot=require_ardupilot,

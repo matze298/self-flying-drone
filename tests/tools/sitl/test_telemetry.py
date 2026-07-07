@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+from typing import Any, cast
 
 from pymavlink import mavutil
 
@@ -16,6 +17,11 @@ EXPECTED_RELATIVE_ALTITUDE_M = 12.3
 EXPECTED_BATTERY_VOLTAGE_V = 12.6
 EXPECTED_BATTERY_CURRENT_A = 1.23
 EXPECTED_BATTERY_REMAINING_PERCENT = 98
+RAW_LATITUDE = 473977420
+RAW_LONGITUDE = 85455940
+RAW_RELATIVE_ALTITUDE = 12300
+RAW_BATTERY_VOLTAGE = 12600
+RAW_BATTERY_CURRENT = 123
 
 
 def test_decode_heartbeat_reports_manual_unarmed() -> None:
@@ -63,3 +69,69 @@ def test_decode_heartbeat_reports_manual_unarmed() -> None:
     assert summary.battery_voltage_v == EXPECTED_BATTERY_VOLTAGE_V
     assert summary.battery_current_a == EXPECTED_BATTERY_CURRENT_A
     assert summary.battery_remaining_percent == EXPECTED_BATTERY_REMAINING_PERCENT
+
+
+def test_global_position_scales_message_fields() -> None:
+    """GLOBAL_POSITION_INT should be scaled to degrees and meters."""
+    message = SimpleNamespace(lat=RAW_LATITUDE, lon=RAW_LONGITUDE, relative_alt=RAW_RELATIVE_ALTITUDE)
+    connection = SimpleNamespace(recv_match=lambda **_: message)
+
+    position = telemetry.GlobalPosition.from_message(cast("Any", connection))
+
+    assert position.lat == EXPECTED_LATITUDE_DEG
+    assert position.lon == EXPECTED_LONGITUDE_DEG
+    assert position.relative_alt == EXPECTED_RELATIVE_ALTITUDE_M
+
+
+def test_global_position_allows_missing_message() -> None:
+    """Missing position telemetry should not fail the basic heartbeat smoke test."""
+    connection = SimpleNamespace(recv_match=lambda **_: None)
+
+    position = telemetry.GlobalPosition.from_message(cast("Any", connection))
+
+    assert position.lat is None
+    assert position.lon is None
+    assert position.relative_alt is None
+
+
+def test_battery_status_scales_message_fields() -> None:
+    """BATTERY_STATUS should be scaled to volts, amps, and percent."""
+    message = SimpleNamespace(
+        voltages=[RAW_BATTERY_VOLTAGE],
+        current_battery=RAW_BATTERY_CURRENT,
+        battery_remaining=EXPECTED_BATTERY_REMAINING_PERCENT,
+    )
+    connection = SimpleNamespace(recv_match=lambda **_: message)
+
+    battery_status = telemetry.BatteryStatus.from_message(cast("Any", connection))
+
+    assert battery_status.voltage_v == EXPECTED_BATTERY_VOLTAGE_V
+    assert battery_status.current_a == EXPECTED_BATTERY_CURRENT_A
+    assert battery_status.remaining_percent == EXPECTED_BATTERY_REMAINING_PERCENT
+
+
+def test_battery_status_preserves_zero_current() -> None:
+    """Zero battery current is a valid reading, not missing telemetry."""
+    message = SimpleNamespace(
+        voltages=[RAW_BATTERY_VOLTAGE],
+        current_battery=0,
+        battery_remaining=0,
+    )
+    connection = SimpleNamespace(recv_match=lambda **_: message)
+
+    battery_status = telemetry.BatteryStatus.from_message(cast("Any", connection))
+
+    assert battery_status.voltage_v == EXPECTED_BATTERY_VOLTAGE_V
+    assert battery_status.current_a == 0
+    assert battery_status.remaining_percent == 0
+
+
+def test_battery_status_allows_missing_message() -> None:
+    """Missing battery telemetry should not fail the basic heartbeat smoke test."""
+    connection = SimpleNamespace(recv_match=lambda **_: None)
+
+    battery_status = telemetry.BatteryStatus.from_message(cast("Any", connection))
+
+    assert battery_status.voltage_v is None
+    assert battery_status.current_a is None
+    assert battery_status.remaining_percent is None
