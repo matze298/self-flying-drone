@@ -18,12 +18,15 @@ if TYPE_CHECKING:
 class FakeMav:
     """Capture MAVLink command calls without requiring a simulator."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, fail_takeoff: bool = False) -> None:
         """Initialize an empty MAVLink command call log."""
         self.command_long_calls: list[tuple[object, ...]] = []
+        self.fail_takeoff = fail_takeoff
 
     def command_long_send(self, *args: object) -> None:
         """Record command_long_send arguments."""
+        if self.fail_takeoff:
+            raise RuntimeError("takeoff command failed")
         self.command_long_calls.append(args)
 
 
@@ -33,10 +36,17 @@ class FakeCommandConnection:
     target_system = 1
     target_component = 1
 
-    def __init__(self, *, modes: dict[str, int] | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        modes: dict[str, int] | None = None,
+        fail_arm: bool = False,
+        fail_takeoff: bool = False,
+    ) -> None:
         """Initialize a fake connection with configurable mode mapping."""
         self.modes = modes if modes is not None else {"TAKEOFF": 13}
-        self.mav = FakeMav()
+        self.mav = FakeMav(fail_takeoff=fail_takeoff)
+        self.fail_arm = fail_arm
         self.calls: list[tuple[str, object]] = []
 
     def mode_mapping(self) -> dict[str, int]:
@@ -49,6 +59,8 @@ class FakeCommandConnection:
 
     def arducopter_arm(self) -> None:
         """Record the generic pymavlink arm command."""
+        if self.fail_arm:
+            raise RuntimeError("arm command failed")
         self.calls.append(("arm", True))
 
     def motors_armed_wait(self) -> None:
@@ -272,4 +284,33 @@ def test_run_command_plan_stops_after_unavailable_mode() -> None:
         },
     ]
     assert connection.calls == []
+    assert connection.mav.command_long_calls == []
+
+
+def test_run_command_plan_stops_after_arm_failure() -> None:
+    """The command plan should record arm failures and skip takeoff."""
+    connection = FakeCommandConnection(fail_arm=True)
+
+    actions = flight_check.run_command_plan(cast("Any", connection), safe_summary())
+
+    assert actions == [
+        {"action": "set_mode", "requested": "TAKEOFF", "result": "accepted"},
+        {"action": "arm", "result": "rejected", "reason": "command-failed"},
+    ]
+    assert connection.calls == [("set_mode", 13)]
+    assert connection.mav.command_long_calls == []
+
+
+def test_run_command_plan_records_takeoff_failure() -> None:
+    """The command plan should record takeoff command failures after arming."""
+    connection = FakeCommandConnection(fail_takeoff=True)
+
+    actions = flight_check.run_command_plan(cast("Any", connection), safe_summary())
+
+    assert actions == [
+        {"action": "set_mode", "requested": "TAKEOFF", "result": "accepted"},
+        {"action": "arm", "result": "accepted"},
+        {"action": "takeoff", "altitude_m": 30, "result": "rejected", "reason": "command-failed"},
+    ]
+    assert connection.calls == [("set_mode", 13), ("arm", True), ("wait_armed", True)]
     assert connection.mav.command_long_calls == []

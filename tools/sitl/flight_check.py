@@ -79,25 +79,36 @@ def run_command_plan(connection: mavfile, summary: HeartbeatSummary) -> list[dic
     actions.append({"action": "set_mode", "requested": TAKEOFF_MODE, "result": "accepted"})
 
     # ARM the copters
-    connection.arducopter_arm()
-    connection.motors_armed_wait()
-    actions.append({"action": "arm", "result": "accepted"})
+    try:
+        connection.arducopter_arm()
+        connection.motors_armed_wait()
+        actions.append({"action": "arm", "result": "accepted"})
+    except:  # noqa: E722 - pymavlink command helpers can raise transport-specific exceptions.
+        actions.append({"action": "arm", "result": "rejected", "reason": "command-failed"})
+        return actions
 
     # Send to MAVLINK
-    connection.mav.command_long_send(
-        connection.target_system,
-        connection.target_component,
-        verified_mavlink.MAV_CMD_NAV_TAKEOFF,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        TAKEOFF_ALTITUDE_M,
-    )
-    actions.append({"action": "takeoff", "altitude_m": TAKEOFF_ALTITUDE_M, "result": "sent"})
+    try:
+        connection.mav.command_long_send(
+            connection.target_system,
+            connection.target_component,
+            verified_mavlink.MAV_CMD_NAV_TAKEOFF,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            TAKEOFF_ALTITUDE_M,
+        )
+        actions.append({"action": "takeoff", "altitude_m": TAKEOFF_ALTITUDE_M, "result": "sent"})
+    except:  # noqa: E722 - pymavlink command helpers can raise transport-specific exceptions.
+        actions.append(
+            {"action": "takeoff", "altitude_m": TAKEOFF_ALTITUDE_M, "result": "rejected", "reason": "command-failed"}
+        )
+        return actions
+
     return actions
 
 
