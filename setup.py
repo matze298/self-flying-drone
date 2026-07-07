@@ -9,7 +9,6 @@
 
 from __future__ import annotations
 
-import os
 import pathlib
 import subprocess
 from typing import TYPE_CHECKING
@@ -17,13 +16,11 @@ from typing import TYPE_CHECKING
 import typer
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Sequence
 
 
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parent
 PROJECT_VENV = PROJECT_ROOT / ".venv"
-VENV_BIN = PROJECT_VENV / "bin"
-VENV_PYTHON = VENV_BIN / "python"
 DEFAULT_WORKSTREAMS = ("docs",)
 ALL_WORKSTREAMS = ("docs", "python", "sim", "rust", "ros", "jetson")
 WORKSTREAM_GROUPS = {
@@ -86,35 +83,6 @@ def sync_command(workstreams: Sequence[str]) -> list[str]:
     return command
 
 
-def is_project_venv_active(
-    env: Mapping[str, str] | None = None,
-) -> bool:
-    """Return whether the current shell has the project venv active."""
-    env = env or os.environ
-    active_venv = env.get("VIRTUAL_ENV")
-    if not active_venv:
-        return False
-
-    return pathlib.Path(active_venv).resolve() == PROJECT_VENV.resolve()
-
-
-def activate_shell() -> None:
-    """Replace this process with an interactive shell inside the project venv."""
-    if is_project_venv_active():
-        typer.echo(f"Virtual environment is already active: {PROJECT_VENV}")
-        return
-
-    shell = os.environ.get("SHELL", "/bin/bash")
-    env = os.environ.copy()
-    env["VIRTUAL_ENV"] = os.fspath(PROJECT_VENV)
-    env["PATH"] = f"{VENV_BIN}{os.pathsep}{env.get('PATH', '')}"
-    env.pop("PYTHONHOME", None)
-
-    typer.echo(f"Entering virtual environment: {PROJECT_VENV}")
-    typer.echo("Run `exit` to return to your previous shell.")
-    os.execvpe(shell, [shell, "-i"], env)
-
-
 def setup(
     workstream: list[str] | None = typer.Option(
         None,
@@ -135,18 +103,8 @@ def setup(
         "--all-workstreams",
         help="Set up every known workstream. Unimplemented workstreams fail clearly.",
     ),
-    skip_sync: bool = typer.Option(
-        False,
-        "--skip-sync",
-        help="Only report venv activation status.",
-    ),
-    shell: bool = typer.Option(
-        True,
-        "--shell/--no-shell",
-        help="Open an interactive shell inside the project virtual environment.",
-    ),
 ) -> None:
-    """Create/update the uv venv and enter it by default."""
+    """Create/update the uv venv and return to the caller."""
     try:
         selected_workstreams = normalize_workstreams(
             workstream,
@@ -157,22 +115,13 @@ def setup(
         typer.echo(str(error), err=True)
         raise typer.Exit(1) from error
 
-    if not skip_sync:
-        subprocess.run(
-            sync_command(selected_workstreams),
-            cwd=PROJECT_ROOT,
-            check=True,
-        )
+    subprocess.run(
+        sync_command(selected_workstreams),
+        cwd=PROJECT_ROOT,
+        check=True,
+    )
 
     report_workstream_notes(selected_workstreams)
-
-    if shell:
-        activate_shell()
-        return
-
-    if is_project_venv_active():
-        typer.echo(f"Virtual environment is active: {PROJECT_VENV}")
-        return
 
     typer.echo(f"Virtual environment is ready: {PROJECT_VENV}")
 

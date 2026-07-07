@@ -1,6 +1,6 @@
 # Assembly and calibration
 
-This chapter starts after the [Learning path](../start/learning-path.md) reaches hardware bench work. SITL and bench power checks should already be understood before a propeller is fitted.
+This chapter starts after the [Learning path](../start/learning-path.md) reaches hardware bench work. Software-in-the-loop (SITL) and bench power checks should already be understood before a propeller is fitted.
 
 ## Assembly order
 

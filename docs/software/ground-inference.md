@@ -21,7 +21,7 @@ flowchart LR
 Use the repo-managed `uv` setup path. Ground inference starts after the SITL and bench interfaces are understood, but before onboard compute is required.
 
 ```bash
-./setup.py --workstream sim --no-shell
+./setup.py --workstream sim
 ```
 
 The `sim` workstream already installs the MAVLink client tools used for telemetry association. When the first real vision CLI lands, add a dedicated `vision` or `ground` dependency group to `pyproject.toml` instead of installing ad hoc packages with `pip`. Expected first dependencies are OpenCV, NumPy, ONNX Runtime, pandas or Polars, and the selected detector wrapper.

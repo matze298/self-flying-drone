@@ -23,10 +23,10 @@ This repository is a fixed-wing autonomy buyers and developers guide. Use these 
 
 - Use `uv` for Python environments, Python dependency groups, docs tooling, and local repo checks.
 - `setup.py` is a self-executable uv script. Keep `./setup.py` working.
-- The default setup path should create/update `.venv` and enter an interactive shell.
+- The default setup path should create/update `.venv` and return to the caller.
 - Supported setup workstreams are `docs`, `python`, `sim`, `rust`, `ros`, and `jetson`.
 - `docs`, `python`, and `sim` are implemented through uv dependency groups.
-- The `sim` workstream installs Python-side MAVLink/SITL client tools. ArduPilot SITL remains an external checkout with system dependencies.
+- The `sim` workstream installs Python-side MAVLink/software-in-the-loop (SITL) client tools. ArduPilot SITL remains an external checkout with system dependencies.
 - `rust`, `ros`, `jetson`, and `--all-workstreams` should fail clearly until real workspaces/installers exist.
 - Do not pretend `uv` manages Rust, ROS, C++, CUDA, TensorRT, or system packages.
 
@@ -47,6 +47,7 @@ This repository is a fixed-wing autonomy buyers and developers guide. Use these 
 Useful checks:
 
 ```bash
+uv run --group dev --group sim pytest
 uv run --group dev ruff format --check .
 uv run --group dev ruff check .
 uv run --group dev ty check
@@ -62,6 +63,7 @@ uv run --group dev prek run --all-files
 - Use representative component families, and warn readers to verify current board revisions, firmware targets, pinouts, and voltage domains.
 - Keep automatic and autonomous operation distinct in safety/legal writing.
 - Experimental vision code must never command control surfaces directly.
+- Spell out domain abbreviations on first use in docs. Keep standard terms like software-in-the-loop (SITL) in paths and tool names when they match upstream robotics terminology.
 
 ## Software Architecture Decisions
 
@@ -80,7 +82,7 @@ The intended long-term layout is:
 
 ```text
 docs/                  # MkDocs handbook
-src/                   # Python package and docs helper code
+src/                   # Future real Python packages once stable APIs exist
 tools/python/          # Future Python CLIs and replay utilities
 tools/sitl/            # ArduPilot SITL checkout/run helpers
 services/rust/         # Future Cargo workspace for standalone services

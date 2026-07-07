@@ -1,4 +1,4 @@
-# SITL flight check
+# Software-in-the-loop (SITL) flight check
 
 This page tracks the second software-in-the-loop (SITL) implementation milestone: a command-sending fixed-wing flight check. It deliberately starts after the [SITL smoke test](sitl-smoke-test.md), because the smoke test proves that the simulator is reachable, the vehicle is fixed-wing ArduPilot, the vehicle is unarmed, and basic telemetry is present without sending commands.
 
