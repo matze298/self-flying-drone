@@ -4,6 +4,8 @@ This page tracks the second software-in-the-loop (SITL) implementation milestone
 
 The flight check is the first place where repo code may send Micro Air Vehicle Link (MAVLink) commands. Keep it separate from the smoke test so the safe observation baseline remains boring and reusable.
 
+This milestone has been validated against live ArduPlane SITL. The successful artifact recorded the ordered command sequence `TAKEOFF -> arm -> takeoff -> observe_progress -> RTL`, `relative_altitude_gain_m: 6.583`, final `mode: "RTL"`, and `status: "ok"`.
+
 ## Goal
 
 Create a repeatable local workflow that proves the repo can command a virtual fixed-wing aircraft under explicit safety gates, record every command it sends, and end in a known state.
@@ -47,6 +49,19 @@ Required design rules:
 
 The initial CLI should refuse to run unless a flag such as `--i-understand-this-sends-commands` is present. The exact flag name can change during implementation, but the intent should not.
 
+The first command profile uses conservative defaults, but the local CLI exposes the tuning values needed for live SITL validation:
+
+```bash
+uv run --project sitl --group sim sitl-flight-check \
+  --connect udp:127.0.0.1:14550 \
+  --i-understand-this-sends-commands \
+  --takeoff-altitude 30 \
+  --end-mode RTL \
+  --progress-gain 5 \
+  --progress-timeout 20 \
+  --progress-sample-timeout 1
+```
+
 ## Proposed scope
 
 Start with the smallest fixed-wing path that proves command authority without turning this into a full mission system.
@@ -56,14 +71,14 @@ Planned command sequence:
 1. Connect to the same stable MAVLink endpoint used by the smoke test.
 2. Run the strict baseline checks: fixed-wing ArduPilot, unarmed, position telemetry, battery telemetry.
 3. Record the preflight state in the artifact.
-4. Switch into the minimum ArduPilot mode needed for the chosen SITL flow.
+4. Switch to Plane `TAKEOFF` mode when the mode is available.
 5. Arm.
-6. Start a minimal takeoff, launch, or mission segment that works reliably in Plane SITL.
-7. Observe progress through altitude, position, mode, or mission state.
-8. Command return-to-launch, land, or another documented safe end action.
-9. Record the final observed state and write the artifact.
+6. Send `MAV_CMD_NAV_TAKEOFF` with the first conservative target altitude.
+7. Observe relative-altitude progress after takeoff.
+8. Switch to Plane `RTL` mode as the first safe ending.
+9. Record a final observed state through the same telemetry path used for preflight.
 
-The exact ArduPilot mode and command sequence should be chosen while testing against live Plane SITL. Do not guess the final flight profile before the simulator proves it.
+Landing is still future work. The exact larger ArduPilot flow should be chosen while testing against live Plane SITL. Do not guess the final flight profile before the simulator proves it.
 
 ## Artifact skeleton
 
@@ -74,6 +89,8 @@ The flight-check artifact should extend the smoke-test artifact style but clearl
   "schema_version": 1,
   "source": "sitl-flight-check",
   "connected": true,
+  "status": "ok",
+  "captured_at": "2026-07-06T12:34:56Z",
   "required_checks": [
     "unarmed",
     "vehicle",
@@ -85,11 +102,26 @@ The flight-check artifact should extend the smoke-test artifact style but clearl
   "commanded_actions": [
     {
       "action": "set_mode",
-      "requested": "TBD",
+      "requested": "TAKEOFF",
       "result": "accepted"
     },
     {
       "action": "arm",
+      "result": "accepted"
+    },
+    {
+      "action": "takeoff",
+      "altitude_m": 30,
+      "result": "sent"
+    },
+    {
+      "action": "observe_progress",
+      "relative_altitude_gain_m": 5.7,
+      "result": "accepted"
+    },
+    {
+      "action": "set_mode",
+      "requested": "RTL",
       "result": "accepted"
     }
   ],
@@ -98,13 +130,13 @@ The flight-check artifact should extend the smoke-test artifact style but clearl
     "armed": false
   },
   "final_state": {
-    "mode": "TBD",
-    "armed": false
+    "mode": "RTL",
+    "armed": true
   }
 }
 ```
 
-Keep the schema small at first. Add fields only when they are useful for debugging or later automation.
+Keep the schema small at first. Add fields only when they are useful for debugging or later automation. When a command is rejected before the nominal final observation, when progress is not observed, or when the final state is not the requested ending mode, the artifact uses `status: "failed"` while preserving the command log and any final state that was captured.
 
 ## Failure policy
 
@@ -116,8 +148,10 @@ The flight check should fail closed.
 | Strict preflight check fails | Exit before sending commands |
 | Mode change is rejected | Stop, record the rejection, do not arm |
 | Arming is rejected | Stop, record the rejection |
-| Progress condition is not met before timeout | Command the safest documented end action available, then fail |
-| Final state cannot be observed | Fail and keep the artifact for debugging |
+| Progress condition is not met before timeout | Stop, record the rejection, and fail |
+| Return-to-launch mode is unavailable | Record the rejection and fail |
+| Final state is not the requested ending mode | Write the captured final state but mark the artifact failed |
+| Final state cannot be observed | Fail before reporting a passing result |
 
 When in doubt, prefer a boring failed artifact over hiding an ambiguous state.
 
@@ -131,6 +165,7 @@ Unit tests should cover contracts that do not require a running simulator:
 | Command log | Every planned command becomes an artifact entry |
 | Preflight reuse | Flight check does not bypass strict smoke-test checks |
 | Failure handling | Rejected commands produce failed artifacts |
+| Final state | Accepted command plans serialize the post-command heartbeat summary |
 | Schema | Artifact shape remains stable enough for review |
 
 Live SITL testing should remain a documented manual step until the command sequence is stable enough for continuous integration.
@@ -150,8 +185,9 @@ The artifact must show:
 | Preflight checks | Strict baseline passed before commands |
 | `commanded_actions` | Non-empty and ordered |
 | Mode/arm commands | Recorded with results |
-| Progress observation | Altitude, position, mode, or mission progress was checked |
-| Final state | Known and documented |
+| Progress observation | Relative altitude gain is recorded after takeoff |
+| Safe ending | Return-to-launch mode command is recorded |
+| Final state | Serialized and matching the requested ending mode |
 | Vision/model involvement | None |
 
 After this milestone, the next simulation work should be failure drills: reconnect behavior, low-battery action, fence action, and command rejection when preconditions are false.

@@ -2,37 +2,19 @@
 
 from __future__ import annotations
 
-import importlib.util
-import pathlib
-import sys
 from typing import TYPE_CHECKING
 
 import pytest
+from pre_commit import check_branch_name
 
 if TYPE_CHECKING:
     from types import ModuleType
 
 
-PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[3]
-HOOK_PATH = PROJECT_ROOT / "tools" / "git" / "check_branch_name.py"
-
-
 @pytest.fixture
 def hook() -> ModuleType:
-    """Load the standalone branch-name hook as a test module."""
-    spec = importlib.util.spec_from_file_location("check_branch_name", HOOK_PATH)
-    if spec is None or spec.loader is None:
-        pytest.fail("Could not load branch-name hook module.")
-
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["check_branch_name"] = module
-    previous_dont_write_bytecode = sys.dont_write_bytecode
-    sys.dont_write_bytecode = True
-    try:
-        spec.loader.exec_module(module)
-    finally:
-        sys.dont_write_bytecode = previous_dont_write_bytecode
-    return module
+    """Return the packaged branch-name hook module."""
+    return check_branch_name
 
 
 @pytest.mark.parametrize(

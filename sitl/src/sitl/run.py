@@ -20,7 +20,7 @@ import typer
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[2]
+PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[3]
 ENV_FILE = PROJECT_ROOT / ".env"
 ARDUPILOT_REPO_ENV = "ARDUPILOT_REPO"
 DEFAULT_ARDUPILOT_REPO = pathlib.Path("~/ws/ardupilot")
@@ -265,5 +265,9 @@ def main(
     subprocess.run(command, cwd=repo_path, check=True, env=external_tool_env())
 
 
+app = typer.Typer()
+app.command()(main)
+
+
 if __name__ == "__main__":
-    typer.run(main)
+    app()

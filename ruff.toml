@@ -19,10 +19,10 @@ convention = "google"
 max-args = 10
 
 [lint.per-file-ignores]
-"tests/**/*.py" = [
+"**/test_*.py" = [
     "S101", # Pytest tests use plain assert statements for readable expectations.
 ]
-"tools/sitl/run.py" = [
+"sitl/src/sitl/run.py" = [
     "FBT002",  # Typer boolean flags are declared as bool defaults for CLI option ergonomics.
     "PLR0913", # This CLI exposes several independent options; splitting would make help text harder to scan.
     "S603",    # The helper intentionally launches fixed external tools: git, ArduPilot prereqs, and sim_vehicle.py.

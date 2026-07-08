@@ -37,9 +37,11 @@ uv run --group docs mkdocs serve
 
 Open `http://127.0.0.1:8000`.
 
-## Software-in-the-loop (SITL) smoke test
+## Software-in-the-loop (SITL)
 
-The cheapest useful software entry point is ArduPilot Plane SITL. It proves this repo can observe a virtual fixed-wing aircraft over MAVLink before any hardware is required.
+The cheapest useful software entry point is ArduPilot Plane SITL. It proves this repo can observe and command a virtual fixed-wing aircraft over MAVLink before any hardware is required.
+
+The SITL tooling is a standalone Python workspace package under `sitl/`, with one root `uv.lock` for the Python workspace. Its command entry points are `sitl-run`, `sitl-smoke-test`, and `sitl-flight-check`.
 
 Set up the repo-side simulator tools:
 
@@ -50,30 +52,34 @@ Set up the repo-side simulator tools:
 Create or reuse the external ArduPilot checkout and install upstream prerequisites when needed:
 
 ```bash
-uv run tools/sitl/run.py --setup-only
-uv run tools/sitl/run.py --install-prereqs --setup-only
+uv run --project sitl --group sim sitl-run --setup-only
+uv run --project sitl --group sim sitl-run --install-prereqs --setup-only
 ```
 
 Start ArduPlane SITL with a stable MAVLink output for repo tools:
 
 ```bash
-uv run tools/sitl/run.py --mavlink-out udp:127.0.0.1:14550
+uv run --project sitl --group sim sitl-run --mavlink-out udp:127.0.0.1:14550
 ```
 
 After the first successful build, repeated local runs can usually skip ArduPilot's rebuild:
 
 ```bash
-uv run tools/sitl/run.py --no-wipe -- -N
+uv run --project sitl --group sim sitl-run --no-wipe -- -N
 ```
 
 Run the observation-only smoke test from a second terminal:
 
 ```bash
-uv run --group sim python tools/sitl/smoke_test.py --connect udp:127.0.0.1:14550
+uv run --project sitl --group sim sitl-smoke-test --connect udp:127.0.0.1:14550
 cat artifacts/sitl/smoke.json
 ```
 
-The smoke test writes a JSON artifact, verifies the vehicle is fixed-wing, verifies it is unarmed, and records no commanded actions. Full setup notes are in `tools/sitl/README.md`.
+The smoke test writes a JSON artifact, verifies the vehicle is fixed-wing, verifies it is unarmed, and records no commanded actions.
+
+The command-sending flight check has been validated against live ArduPlane SITL. The successful run recorded `TAKEOFF -> arm -> takeoff -> observe_progress -> RTL`, `relative_altitude_gain_m: 6.583`, final `mode: "RTL"`, and `status: "ok"`.
+
+Full setup notes are in `sitl/README.md`, and the implementation milestone is documented in `docs/implementation/sitl-flight-check.md`.
 
 Run formatting, linting, and type checks:
 
@@ -92,6 +98,8 @@ Install the Git hooks locally:
 ```bash
 uv run --group dev prek install
 ```
+
+Local hook implementations live in the `pre-commit/` workspace package; `prek.toml` wires them into the repo hook runner.
 
 ## Development stack
 

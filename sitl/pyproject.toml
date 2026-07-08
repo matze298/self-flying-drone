@@ -1,0 +1,34 @@
+[project]
+name = "sitl"
+version = "0.1.0"
+description = "Software-in-the-loop helpers for the drone build guide."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "orjson>=3.11.9",
+    "pymavlink>=2.4.49",
+    "typer>=0.20.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.0,<0.12.0"]
+build-backend = "uv_build"
+
+[project.scripts]
+sitl-flight-check = "sitl.flight_check:app"
+sitl-run = "sitl.run:app"
+sitl-smoke-test = "sitl.smoke_test:app"
+
+[tool.uv]
+package = true
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.15.20",
+    "ty>=0.0.56",
+]
+sim = [
+    "aioconsole>=0.8.2",
+    "mavsdk>=3.15.3",
+]
