@@ -5,7 +5,7 @@ requires-python = ">=3.14"
 [manifest]
 members = [
     "drone-build",
-    "pre-commit-hooks",
+    "pre-commit",
     "sitl",
 ]
 
@@ -127,6 +127,7 @@ source = { virtual = "." }
 
 [package.dev-dependencies]
 dev = [
+    { name = "pre-commit" },
     { name = "prek" },
     { name = "pytest" },
     { name = "ruff" },
@@ -144,6 +145,7 @@ sim = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "pre-commit", editable = "pre-commit" },
     { name = "prek", specifier = ">=0.4.8" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "ruff", specifier = ">=0.15.20" },
@@ -521,7 +523,7 @@ wheels = [
 ]
 
 [[package]]
-name = "pre-commit-hooks"
+name = "pre-commit"
 version = "0.1.0"
 source = { editable = "pre-commit" }
 

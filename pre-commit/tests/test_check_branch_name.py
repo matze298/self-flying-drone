@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
-from pre_commit_hooks import check_branch_name
+from pre_commit import check_branch_name
 
 if TYPE_CHECKING:
     from types import ModuleType

@@ -1,5 +1,5 @@
 [project]
-name = "pre-commit-hooks"
+name = "pre-commit"
 version = "0.1.0"
 description = "Local pre-commit hooks for the drone build guide."
 requires-python = ">=3.14"
@@ -9,7 +9,7 @@ requires = ["uv_build>=0.11.0,<0.12.0"]
 build-backend = "uv_build"
 
 [project.scripts]
-check-branch-name = "pre_commit_hooks.check_branch_name:main"
+check-branch-name = "pre_commit.check_branch_name:main"
 
 [tool.uv]
 package = true

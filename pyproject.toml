@@ -16,6 +16,7 @@ members = ["pre-commit", "sitl"]
 
 [dependency-groups]
 dev = [
+    "pre-commit",
     "prek>=0.4.8",
     "pytest>=9.1.1",
     "ruff>=0.15.20",
@@ -30,6 +31,7 @@ sim = [
 ]
 
 [tool.uv.sources]
+pre-commit = { workspace = true }
 sitl = { workspace = true }
 
 [tool.pytest.ini_options]
