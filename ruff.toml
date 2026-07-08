@@ -20,7 +20,6 @@ max-args = 10
 
 [lint.per-file-ignores]
 "**/test_*.py" = [
-    "INP001", # Package-local pytest files may intentionally live outside an importable test package.
     "S101", # Pytest tests use plain assert statements for readable expectations.
 ]
 "sitl/src/sitl/run.py" = [

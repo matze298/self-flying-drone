@@ -31,3 +31,6 @@ sim = [
 
 [tool.uv.sources]
 sitl = { workspace = true }
+
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib"]
