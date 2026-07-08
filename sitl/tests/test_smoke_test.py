@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import importlib.util
 import pathlib
-import sys
 from types import SimpleNamespace
 from typing import TYPE_CHECKING
 
@@ -13,12 +11,12 @@ import typer
 from pymavlink import mavutil
 from typer.testing import CliRunner
 
+from sitl import smoke_test as smoke_test_module
+
 if TYPE_CHECKING:
     from types import ModuleType
 
 
-PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[3]
-SMOKE_TEST_PATH = PROJECT_ROOT / "tools" / "sitl" / "smoke_test.py"
 EXPECTED_HEARTBEAT_WAIT_S = 0.123
 EXPECTED_CAPTURED_AT = "2026-07-06T12:34:56Z"
 EXPECTED_LATITUDE_DEG = 47.397742
@@ -33,20 +31,8 @@ RUNNER = CliRunner()
 
 @pytest.fixture
 def smoke_test() -> ModuleType:
-    """Load the standalone smoke-test script as a test module."""
-    spec = importlib.util.spec_from_file_location("sitl_smoke_test", SMOKE_TEST_PATH)
-    if spec is None or spec.loader is None:
-        pytest.fail("Could not load SITL smoke-test module.")
-
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["sitl_smoke_test"] = module
-    previous_dont_write_bytecode = sys.dont_write_bytecode
-    sys.dont_write_bytecode = True
-    try:
-        spec.loader.exec_module(module)
-    finally:
-        sys.dont_write_bytecode = previous_dont_write_bytecode
-    return module
+    """Return the packaged smoke-test module."""
+    return smoke_test_module
 
 
 def test_run_smoke_test_requires_position_by_default(

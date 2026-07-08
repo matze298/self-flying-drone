@@ -50,7 +50,7 @@ The initial CLI should refuse to run unless a flag such as `--i-understand-this-
 The first command profile uses conservative defaults, but the local CLI exposes the tuning values needed for live SITL validation:
 
 ```bash
-uv run --group sim python tools/sitl/flight_check.py \
+uv run --project sitl --group sim sitl-flight-check \
   --connect udp:127.0.0.1:14550 \
   --i-understand-this-sends-commands \
   --takeoff-altitude 30 \

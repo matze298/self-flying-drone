@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-from tools.sitl import artifacts, telemetry
+from sitl import artifacts, telemetry
 
 if TYPE_CHECKING:
     import pathlib

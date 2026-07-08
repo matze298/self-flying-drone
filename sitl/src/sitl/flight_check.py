@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING, Annotated
 
 import typer
 
-from tools.sitl import preflight
-from tools.sitl.artifacts import create_flight_check_artifact, write_artifact
-from tools.sitl.telemetry import (
+from sitl import preflight
+from sitl.artifacts import create_flight_check_artifact, write_artifact
+from sitl.telemetry import (
     DEFAULT_CONNECT,
     BatteryStatus,
     ExpectedVehicle,
@@ -256,7 +256,7 @@ def main(
         typer.Option(
             "--connect",
             "-c",
-            help="MAVLink endpoint exposed by tools/sitl/run.py.",
+            help="MAVLink endpoint exposed by sitl-run.",
         ),
     ] = DEFAULT_CONNECT,
     timeout: Annotated[
@@ -272,7 +272,7 @@ def main(
         typer.Option(
             "--output",
             "-o",
-            help="Path for the JSON smoke-test artifact.",
+            help="Path for the JSON flight-check artifact.",
         ),
     ] = DEFAULT_OUTPUT,
     *,
@@ -322,7 +322,7 @@ def main(
         ),
     ] = 1.0,
 ) -> None:
-    """Connect to SITL, observe one heartbeat, and print the safe baseline state."""
+    """Connect to SITL, send the command plan, and print the preflight state."""
     summary = run_flight_check(
         connect,
         timeout,
@@ -350,5 +350,9 @@ def main(
     typer.echo(f"output: {output}")
 
 
+app = typer.Typer()
+app.command()(main)
+
+
 if __name__ == "__main__":
-    typer.run(main)
+    app()

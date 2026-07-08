@@ -12,7 +12,7 @@ import typer
 from pymavlink import mavutil
 from typer.testing import CliRunner
 
-from tools.sitl import flight_check, telemetry
+from sitl import flight_check, telemetry
 
 RUNNER = CliRunner()
 

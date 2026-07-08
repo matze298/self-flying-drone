@@ -22,7 +22,11 @@ max-args = 10
 "tests/**/*.py" = [
     "S101", # Pytest tests use plain assert statements for readable expectations.
 ]
-"tools/sitl/run.py" = [
+"sitl/tests/**/*.py" = [
+    "INP001", # Package-local pytest files intentionally live outside an importable test package.
+    "S101", # Pytest tests use plain assert statements for readable expectations.
+]
+"sitl/src/sitl/run.py" = [
     "FBT002",  # Typer boolean flags are declared as bool defaults for CLI option ergonomics.
     "PLR0913", # This CLI exposes several independent options; splitting would make help text harder to scan.
     "S603",    # The helper intentionally launches fixed external tools: git, ArduPilot prereqs, and sim_vehicle.py.

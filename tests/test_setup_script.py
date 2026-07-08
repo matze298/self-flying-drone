@@ -77,3 +77,26 @@ def test_default_setup_syncs_docs_workstream_and_returns(
 
     assert commands == [["uv", "sync", "--group", "docs"]]
     assert f"Virtual environment is ready: {setup_script.PROJECT_VENV}" in capsys.readouterr().out
+
+
+def test_sim_setup_syncs_workspace_packages(
+    setup_script: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The sim workstream should include workspace package dependency groups."""
+    commands: list[list[str]] = []
+
+    def fake_run(command: list[str], *, cwd: pathlib.Path, check: bool) -> None:
+        commands.append(command)
+        assert cwd == setup_script.PROJECT_ROOT
+        assert check is True
+
+    monkeypatch.setattr(setup_script.subprocess, "run", fake_run)
+
+    setup_script.setup(workstream=["sim"], docs=True, all_workstreams=False)
+
+    assert commands == [["uv", "sync", "--all-packages", "--group", "sim"]]
+    output = capsys.readouterr().out
+    assert "Simulation Python tools are installed." in output
+    assert f"Virtual environment is ready: {setup_script.PROJECT_VENV}" in output

@@ -5,7 +5,7 @@ from __future__ import annotations
 import typer
 from pymavlink import mavutil
 
-from tools.sitl.telemetry import ExpectedVehicle, HeartbeatSummary
+from sitl.telemetry import ExpectedVehicle, HeartbeatSummary
 
 if mavutil.mavlink is None:
     raise RuntimeError("pymavlink dialect is not loaded.")

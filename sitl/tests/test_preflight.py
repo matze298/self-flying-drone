@@ -6,7 +6,7 @@ import pytest
 import typer
 from pymavlink import mavutil
 
-from tools.sitl import preflight, telemetry
+from sitl import preflight, telemetry
 
 
 def summary(**overrides: object) -> telemetry.HeartbeatSummary:

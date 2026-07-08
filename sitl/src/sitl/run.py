@@ -1,10 +1,4 @@
 #!/usr/bin/env -S uv run --script
-# /// script
-# requires-python = ">=3.14"
-# dependencies = [
-#     "typer>=0.20.0",
-# ]
-# ///
 """Run ArduPilot Plane SITL from an external checkout."""
 
 from __future__ import annotations
@@ -20,7 +14,7 @@ import typer
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[2]
+PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[3]
 ENV_FILE = PROJECT_ROOT / ".env"
 ARDUPILOT_REPO_ENV = "ARDUPILOT_REPO"
 DEFAULT_ARDUPILOT_REPO = pathlib.Path("~/ws/ardupilot")
@@ -265,5 +259,9 @@ def main(
     subprocess.run(command, cwd=repo_path, check=True, env=external_tool_env())
 
 
+app = typer.Typer()
+app.command()(main)
+
+
 if __name__ == "__main__":
-    typer.run(main)
+    app()

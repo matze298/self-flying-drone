@@ -77,6 +77,8 @@ def report_workstream_notes(workstreams: Sequence[str]) -> None:
 def sync_command(workstreams: Sequence[str]) -> list[str]:
     """Build the uv sync command for the requested dependency groups."""
     command = ["uv", "sync"]
+    if "sim" in workstreams:
+        command.append("--all-packages")
     dependency_groups = dict.fromkeys(group for name in workstreams for group in WORKSTREAM_GROUPS[name])
     for group in dependency_groups:
         command.extend(["--group", group])

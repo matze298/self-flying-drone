@@ -9,20 +9,20 @@ from typing import Annotated
 
 import typer
 
-from tools.sitl.artifacts import (
+from sitl.artifacts import (
     DEFAULT_OUTPUT,
     build_required_checks,
     create_smoke_artifact,
     write_artifact,
 )
-from tools.sitl.preflight import (
+from sitl.preflight import (
     ensure_ardupilot,
     ensure_battery_available,
     ensure_position_available,
     ensure_unarmed,
     ensure_vehicle_type,
 )
-from tools.sitl.telemetry import (
+from sitl.telemetry import (
     DEFAULT_CONNECT,
     BatteryStatus,
     ExpectedVehicle,
@@ -93,7 +93,7 @@ def main(
         typer.Option(
             "--connect",
             "-c",
-            help="MAVLink endpoint exposed by tools/sitl/run.py.",
+            help="MAVLink endpoint exposed by sitl-run.",
         ),
     ] = DEFAULT_CONNECT,
     timeout: Annotated[
@@ -168,5 +168,9 @@ def main(
     typer.echo(f"output: {output}")
 
 
+app = typer.Typer()
+app.command()(main)
+
+
 if __name__ == "__main__":
-    typer.run(main)
+    app()

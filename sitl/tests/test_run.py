@@ -2,37 +2,21 @@
 
 from __future__ import annotations
 
-import importlib.util
 import pathlib
-import sys
 from typing import TYPE_CHECKING
 
 import pytest
+
+from sitl import run as run_module
 
 if TYPE_CHECKING:
     from types import ModuleType
 
 
-PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[3]
-HELPER_PATH = PROJECT_ROOT / "tools" / "sitl" / "run.py"
-
-
 @pytest.fixture
 def helper() -> ModuleType:
-    """Load the standalone helper script as a test module."""
-    spec = importlib.util.spec_from_file_location("sitl_run_helper", HELPER_PATH)
-    if spec is None or spec.loader is None:
-        pytest.fail("Could not load SITL helper module.")
-
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["sitl_run_helper"] = module
-    previous_dont_write_bytecode = sys.dont_write_bytecode
-    sys.dont_write_bytecode = True
-    try:
-        spec.loader.exec_module(module)
-    finally:
-        sys.dont_write_bytecode = previous_dont_write_bytecode
-    return module
+    """Return the packaged SITL runner module."""
+    return run_module
 
 
 def test_env_file_sets_default_repo_path(helper: ModuleType, tmp_path: pathlib.Path) -> None:

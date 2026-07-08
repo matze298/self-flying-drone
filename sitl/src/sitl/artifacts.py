@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 import orjson
 
 if TYPE_CHECKING:
-    from tools.sitl.telemetry import HeartbeatSummary
+    from sitl.telemetry import HeartbeatSummary
 
 DEFAULT_OUTPUT = pathlib.Path("artifacts/sitl/smoke.json")
 BASE_REQUIRED_CHECKS = ("unarmed", "vehicle")

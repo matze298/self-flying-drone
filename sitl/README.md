@@ -27,7 +27,7 @@ From this repository:
 
 ```bash
 ./setup.py --workstream sim
-uv run --group sim python -c "import mavsdk, pymavlink; print('mavlink clients ok')"
+uv run --project sitl --group sim python -c "import mavsdk, pymavlink; print('mavlink clients ok')"
 ```
 
 This installs the Python-side tools used by this repo to talk MAVLink to a running simulator. It does not install or vendor ArduPilot itself.
@@ -39,7 +39,7 @@ If `uv` prints a warning about `VIRTUAL_ENV` not matching `.venv`, it is usually
 The helper clones ArduPilot when the configured path does not exist:
 
 ```bash
-uv run tools/sitl/run.py --setup-only
+uv run --project sitl --group sim sitl-run --setup-only
 ```
 
 Use `--no-clone` when you want the command to fail instead of creating the checkout.
@@ -49,7 +49,7 @@ Use `--no-clone` when you want the command to fail instead of creating the check
 ArduPilot's Ubuntu prerequisite installer installs native build tools and simulator dependencies. It may use `sudo` and ask for your password. The helper prints a warning before running it:
 
 ```bash
-uv run tools/sitl/run.py --install-prereqs --setup-only
+uv run --project sitl --group sim sitl-run --install-prereqs --setup-only
 ```
 
 If `sim_vehicle.py` is not found after prerequisite installation, reopen the shell or run:
@@ -65,7 +65,7 @@ Run this whenever you want a local virtual aircraft. Usage creates a repeatable 
 ### Start SITL
 
 ```bash
-uv run tools/sitl/run.py
+uv run --project sitl --group sim sitl-run
 ```
 
 The helper starts ArduPilot tools outside uv's isolated script environment so `sim_vehicle.py` can use the Python packages installed by ArduPilot's prerequisite script.
@@ -79,8 +79,8 @@ Tools/autotest/sim_vehicle.py -v ArduPlane --map --console -w --out=udp:127.0.0.
 Plane is the default because this repository is organized around a fixed-wing reference build. Other ArduPilot vehicles are available when you need them:
 
 ```bash
-uv run tools/sitl/run.py --vehicle copter
-uv run tools/sitl/run.py --vehicle rover
+uv run --project sitl --group sim sitl-run --vehicle copter
+uv run --project sitl --group sim sitl-run --vehicle rover
 ```
 
 Use `--no-wipe` after the first successful run when you want to keep simulated parameter changes between sessions.
@@ -88,13 +88,13 @@ Use `--no-wipe` after the first successful run when you want to keep simulated p
 ArduPilot rebuilds before starting by default. After the first successful build, skip that rebuild during normal repeated runs by passing `-N` through to `sim_vehicle.py`:
 
 ```bash
-uv run tools/sitl/run.py --no-wipe -- -N
+uv run --project sitl --group sim sitl-run --no-wipe -- -N
 ```
 
 The helper also exposes a stable MAVLink output endpoint for repo smoke-test clients:
 
 ```bash
-uv run tools/sitl/run.py --mavlink-out udp:127.0.0.1:14550
+uv run --project sitl --group sim sitl-run --mavlink-out udp:127.0.0.1:14550
 ```
 
 Use `--mavlink-out ""` only when you intentionally do not want MAVProxy to publish a client endpoint.
@@ -128,7 +128,7 @@ The first repo-owned validation proves connectivity and observability without ch
 Start SITL first, then run the smoke test from a second terminal:
 
 ```bash
-uv run --group sim python tools/sitl/smoke_test.py --connect udp:127.0.0.1:14550
+uv run --project sitl --group sim sitl-smoke-test --connect udp:127.0.0.1:14550
 cat artifacts/sitl/smoke.json
 ```
 
@@ -137,26 +137,26 @@ The smoke test records when the observation was captured, heartbeat identity, mo
 ArduPilot identity, position, and battery telemetry are required by default because this is the boring baseline we expect to trust before building higher-level autonomy. If you are debugging early SITL startup timing or a non-ArduPilot MAVLink endpoint, opt out explicitly:
 
 ```bash
-uv run --group sim python tools/sitl/smoke_test.py --no-require-ardupilot --no-require-position --no-require-battery
+uv run --project sitl --group sim sitl-smoke-test --no-require-ardupilot --no-require-position --no-require-battery
 ```
 
 The default expected vehicle is `fixed-wing`, matching this repo's learning path:
 
 ```bash
-uv run --group sim python tools/sitl/smoke_test.py --expected-vehicle fixed-wing
+uv run --project sitl --group sim sitl-smoke-test --expected-vehicle fixed-wing
 ```
 
 When you intentionally start another SITL vehicle, make the expectation explicit:
 
 ```bash
-uv run tools/sitl/run.py --vehicle rover
-uv run --group sim python tools/sitl/smoke_test.py --expected-vehicle rover
+uv run --project sitl --group sim sitl-run --vehicle rover
+uv run --project sitl --group sim sitl-smoke-test --expected-vehicle rover
 ```
 
 For example, launch the ArduPilot helicopter SITL variant in one terminal:
 
 ```bash
-uv run tools/sitl/run.py --vehicle heli
+uv run --project sitl --group sim sitl-run --vehicle heli
 ```
 
 The helper launches this as ArduCopter with the `heli` frame because ArduPilot does not have a top-level `Helicopter/` vehicle directory.
@@ -164,7 +164,7 @@ The helper launches this as ArduCopter with the `heli` frame because ArduPilot d
 Then run the smoke test from a second terminal with the matching MAVLink heartbeat expectation:
 
 ```bash
-uv run --group sim python tools/sitl/smoke_test.py --expected-vehicle helicopter
+uv run --project sitl --group sim sitl-smoke-test --expected-vehicle helicopter
 ```
 
 ### Baseline complete
@@ -211,7 +211,7 @@ If logs obscure the MAVProxy prompt, focus the launch terminal and press `Enter`
 The helper defaults to `--wipe` for repeatable first runs. Use this after the first successful launch when you want to keep simulated parameter changes:
 
 ```bash
-uv run tools/sitl/run.py --no-wipe
+uv run --project sitl --group sim sitl-run --no-wipe
 ```
 
 ### Rebuild on every launch
@@ -219,7 +219,7 @@ uv run tools/sitl/run.py --no-wipe
 ArduPilot's `sim_vehicle.py` rebuilds by default. That is useful while the ArduPilot checkout changes, but it is unnecessary for most repeated smoke-test runs after the first successful build. Pass `-N` through to `sim_vehicle.py` to skip rebuilding:
 
 ```bash
-uv run tools/sitl/run.py --no-wipe -- -N
+uv run --project sitl --group sim sitl-run --no-wipe -- -N
 ```
 
 ## Raw upstream commands

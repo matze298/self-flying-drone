@@ -7,7 +7,7 @@ from typing import Any, cast
 
 from pymavlink import mavutil
 
-from tools.sitl import telemetry
+from sitl import telemetry
 
 EXPECTED_CAPTURED_AT = "2026-07-06T12:34:56Z"
 EXPECTED_HEARTBEAT_WAIT_S = 0.123

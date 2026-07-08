@@ -22,25 +22,24 @@ The first slice is intentionally small because the repo already uses `uv` and th
 Current layout:
 
 ```text
-tools/
-└── sitl/
-    ├── README.md
-    ├── artifacts.py
-    ├── flight_check.py
-    ├── preflight.py
-    ├── run.py
-    ├── smoke_test.py
-    └── telemetry.py
-
-tests/
-└── tools/
-    └── sitl/
-        ├── test_artifacts.py
-        ├── test_flight_check.py
-        ├── test_preflight.py
-        ├── test_run.py
-        ├── test_smoke_test.py
-        └── test_telemetry.py
+sitl/
+├── pyproject.toml
+├── README.md
+├── src/
+│   └── sitl/
+│       ├── artifacts.py
+│       ├── flight_check.py
+│       ├── preflight.py
+│       ├── run.py
+│       ├── smoke_test.py
+│       └── telemetry.py
+└── tests/
+    ├── test_artifacts.py
+    ├── test_flight_check.py
+    ├── test_preflight.py
+    ├── test_run.py
+    ├── test_smoke_test.py
+    └── test_telemetry.py
 
 artifacts/
 └── sitl/
@@ -52,20 +51,20 @@ These paths are the first slice of the canonical layout described in [Developmen
 | Boundary | Rule |
 |---|---|
 | SITL | External ArduPilot checkout, not vendored into this repo |
-| Repo command-line interface (CLI) | Connects to MAVLink and records observations |
+| SITL package | Lives under `sitl/`, owns its Python dependencies, and exposes `sitl-run`, `sitl-smoke-test`, and `sitl-flight-check` entry points |
 | Tests | Validate parser/output contracts without requiring SITL for every unit test |
 | Artifacts | Generated local evidence under `artifacts/`; do not commit routine smoke-test output |
 
 ## Local setup skeleton
 
-The detailed, working local procedure lives in `tools/sitl/README.md`. The executive summary is:
+The detailed, working local procedure lives in `sitl/README.md`. The executive summary is:
 
 ```bash
 ./setup.py --workstream sim
-uv run --group sim python -c "import mavsdk, pymavlink; print('mavlink clients ok')"
-uv run tools/sitl/run.py --setup-only
-uv run tools/sitl/run.py --install-prereqs --setup-only
-uv run tools/sitl/run.py --mavlink-out udp:127.0.0.1:14550
+uv run --project sitl --group sim python -c "import mavsdk, pymavlink; print('mavlink clients ok')"
+uv run --project sitl --group sim sitl-run --setup-only
+uv run --project sitl --group sim sitl-run --install-prereqs --setup-only
+uv run --project sitl --group sim sitl-run --mavlink-out udp:127.0.0.1:14550
 ```
 
 The default local ArduPilot checkout path is configured through `.env`:
@@ -76,14 +75,14 @@ ARDUPILOT_REPO=~/ws/ardupilot
 
 The helper defaults to `--vehicle plane` because this repository's learning path is fixed-wing first. Use another ArduPilot vehicle only when a specific experiment needs it, for example `--vehicle copter`. The explicit MAVLink output gives repo smoke-test clients a stable endpoint.
 
-For repeated runs after the first successful ArduPilot build, use `uv run tools/sitl/run.py --no-wipe -- -N` to preserve simulated parameters and skip ArduPilot's default rebuild.
+For repeated runs after the first successful ArduPilot build, use `uv run --project sitl --group sim sitl-run --no-wipe -- -N` to preserve simulated parameters and skip ArduPilot's default rebuild.
 
 When SITL launches, use the MAVProxy prompt in the launch terminal for commands. The window titled `console` is a status/log display, `ArduPlane` is the simulator window, and `Map` is the map view.
 
 Run the observation-only smoke test from a second terminal:
 
 ```bash
-uv run --group sim python tools/sitl/smoke_test.py --connect udp:127.0.0.1:14550
+uv run --project sitl --group sim sitl-smoke-test --connect udp:127.0.0.1:14550
 ```
 
 The command writes `artifacts/sitl/smoke.json`, verifies the heartbeat matches the expected vehicle type, verifies the vehicle is unarmed, verifies the heartbeat is from ArduPilot, requires position and battery telemetry, records `commanded_actions: []`, and prints a short human-readable summary. The default expected vehicle is `fixed-wing`, matching this repo's fixed-wing-first learning path.
@@ -95,8 +94,8 @@ The position check requires latitude, longitude, and relative altitude. The batt
 When intentionally testing a different SITL vehicle, pass the expected type explicitly:
 
 ```bash
-uv run tools/sitl/run.py --vehicle rover
-uv run --group sim python tools/sitl/smoke_test.py --expected-vehicle rover
+uv run --project sitl --group sim sitl-run --vehicle rover
+uv run --project sitl --group sim sitl-smoke-test --expected-vehicle rover
 ```
 
 ## Telemetry to capture first
