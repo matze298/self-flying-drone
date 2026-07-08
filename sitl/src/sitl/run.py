@@ -1,4 +1,10 @@
 #!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = [
+#     "typer>=0.20.0",
+# ]
+# ///
 """Run ArduPilot Plane SITL from an external checkout."""
 
 from __future__ import annotations

@@ -4,6 +4,8 @@ This page tracks the second software-in-the-loop (SITL) implementation milestone
 
 The flight check is the first place where repo code may send Micro Air Vehicle Link (MAVLink) commands. Keep it separate from the smoke test so the safe observation baseline remains boring and reusable.
 
+This milestone has been validated against live ArduPlane SITL. The successful artifact recorded the ordered command sequence `TAKEOFF -> arm -> takeoff -> observe_progress -> RTL`, `relative_altitude_gain_m: 6.583`, final `mode: "RTL"`, and `status: "ok"`.
+
 ## Goal
 
 Create a repeatable local workflow that proves the repo can command a virtual fixed-wing aircraft under explicit safety gates, record every command it sends, and end in a known state.
