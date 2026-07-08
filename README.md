@@ -99,6 +99,8 @@ Install the Git hooks locally:
 uv run --group dev prek install
 ```
 
+Local hook implementations live in the `pre-commit/` workspace package; `prek.toml` wires them into the repo hook runner.
+
 ## Development stack
 
 The project should stay in a **polyglot monorepo** for now. Documentation, ArduPilot configuration, Python tools, Rust services, ROS packages, deployment manifests, model manifests, and replay tests belong together because they describe one aircraft system and share interface contracts. Keep large raw datasets, videos, and model weights out of normal Git history.

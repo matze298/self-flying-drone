@@ -35,6 +35,7 @@ Keep the monorepo, but split build roots by toolchain:
 
 ```text
 docs/                  # MkDocs handbook
+pre-commit/            # Python package for local repository hooks
 sitl/                  # Python package for ArduPilot SITL helpers and flight checks
 src/                   # Future root-level Python packages only if a cross-cutting package emerges
 tools/python/          # Future Python CLIs and replay utilities

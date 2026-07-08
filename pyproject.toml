@@ -12,7 +12,7 @@ requires-python = ">=3.14"
 package = false
 
 [tool.uv.workspace]
-members = ["sitl"]
+members = ["pre-commit", "sitl"]
 
 [dependency-groups]
 dev = [
