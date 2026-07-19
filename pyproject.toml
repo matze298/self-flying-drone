@@ -17,10 +17,10 @@ members = ["pre-commit", "sitl"]
 [dependency-groups]
 dev = [
     "pre-commit",
-    "prek>=0.4.8",
+    "prek>=0.4.9",
     "pytest>=9.1.1",
-    "ruff>=0.15.20",
-    "ty>=0.0.56",
+    "ruff>=0.15.21",
+    "ty>=0.0.58",
 ]
 docs = [
     "mkdocs>=1.6.1",
